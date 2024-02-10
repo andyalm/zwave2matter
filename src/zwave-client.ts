@@ -1,17 +1,17 @@
 import WebSocket from "ws";
-import {OutgoingMessage, ResultTypes} from "./outgoing-message";
+import {OutgoingEvent, OutgoingMessage} from "./outgoing-message";
+import {ZwaveInitialResult} from "./zwave-types";
 
 const schemaVersion = 35;
 
 export type MessageSubscription = (message: OutgoingMessage) => void|Promise<void>
-
-export type Node = any;
+export type EventSubscription = (event: OutgoingEvent) => void|Promise<void>
 
 export class ZwaveClient {
   readonly #serverAddress: string;
   readonly #messageSubscriptions: MessageSubscription[] = [];
+  readonly #eventSubscriptions: EventSubscription[] = [];
   #socket: WebSocket;
-  #nodes: Node[];
 
   constructor(serverAddress: string) {
     if(!serverAddress.startsWith("ws://")) {
@@ -22,7 +22,7 @@ export class ZwaveClient {
     }
   }
 
-  async start() {
+  async start(): Promise<ZwaveInitialResult[]> {
     this.#socket = new WebSocket(this.#serverAddress);
     this.#socket.on("open", () => {
       this.#socket.send(
@@ -59,10 +59,15 @@ export class ZwaveClient {
           message.messageId === "start-listening-result" &&
           message.success
         ) {
-          this.#nodes = message.result.state.nodes;
           if(!promiseResolved) {
-            resolve(undefined);
+            resolve(message.result.state.nodes);
             promiseResolved = true;
+          }
+        }
+
+        if(message.type === "event") {
+          for (const subscription of this.#eventSubscriptions) {
+            subscription(message.event);
           }
         }
       });
@@ -78,14 +83,24 @@ export class ZwaveClient {
     this.#socket = undefined;
   }
 
-  get nodes() {
-    return this.#nodes;
-  }
-
-  subscribe(subscription: MessageSubscription) {
+  subscribeAll(subscription: MessageSubscription) {
     if(!this.#messageSubscriptions.includes(subscription)) {
       this.#messageSubscriptions.push(subscription);
     }
   }
 
+  subscribeAllEvents(listener: (event: OutgoingEvent) => void|Promise<void>) {
+    if(!this.#eventSubscriptions.includes(listener)) {
+      this.#eventSubscriptions.push(listener);
+    }
+  }
+
+  subscribeEvents<TEvent>(filter: (event: OutgoingEvent) => TEvent|undefined, listener: (event: TEvent) => void|Promise<void>) {
+    this.subscribeAllEvents(event => {
+      const filtered = filter(event);
+      if(filtered !== undefined) {
+        listener(filtered);
+      }
+    });
+  }
 }

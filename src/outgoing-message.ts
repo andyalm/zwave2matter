@@ -1,19 +1,10 @@
 
 
-// https://github.com/microsoft/TypeScript/issues/1897#issuecomment-822032151
-export type JSONValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JSONValue[]
-  | { [key: string]: JSONValue }
-  | {};
 
 export interface OutgoingEvent {
   source: "controller" | "node" | "driver";
   event: string;
-  [key: string]: JSONValue;
+  [key: string]: any;
 }
 
 interface OutgoingVersionMessage {
@@ -36,7 +27,7 @@ interface OutgoingResultMessageError {
   success: false;
   errorCode: string;
   message?: string;
-  args: JSONValue;
+  args: any;
 }
 
 interface OutgoingResultMessageZWaveError {
