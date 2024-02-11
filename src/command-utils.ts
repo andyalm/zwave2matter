@@ -2,6 +2,8 @@ import { env } from 'process';
 import {ZwaveClient} from "./zwave-client";
 import {Command, program} from "commander";
 import {ZwaveInitialResult} from "./zwave-types";
+import {MatterServer} from "@project-chip/matter-node.js";
+import {StorageManager, StorageBackendMemory} from "@project-chip/matter-node.js/storage";
 
 export type EndpointOptions = {
   zwaveEndpoint?: string
@@ -49,4 +51,22 @@ export function waitForSigTerm(): Promise<void> {
     process.on("SIGINT", resolve);
     process.on("SIGTERM", resolve);
   });
+}
+
+export async function withMatterServer(options: any, action: (server: MatterServer) => void|Promise<void>) {
+  const storageManager = new StorageManager(new StorageBackendMemory());
+  await storageManager.initialize();
+
+  const matterServer = new MatterServer(storageManager);
+  await matterServer.start();
+
+  try {
+    const actionReturn = action(matterServer);
+    if (actionReturn instanceof Promise) {
+      await actionReturn;
+    }
+  }
+  finally {
+    await matterServer.close();
+  }
 }

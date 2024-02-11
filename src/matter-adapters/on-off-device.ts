@@ -1,4 +1,4 @@
-import {ComposedDevice, Device, OnOffLightDevice} from "@project-chip/matter.js/device";
+import {ComposedDevice, Device, OnOffLightDevice} from "@project-chip/matter-node.js/device";
 import {ZwaveCommandClasses, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 

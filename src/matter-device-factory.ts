@@ -1,5 +1,5 @@
 import {ZwaveInitialResult} from "./zwave-types";
-import {ComposedDevice, Device} from "@project-chip/matter.js/device";
+import {ComposedDevice, Device} from "@project-chip/matter-node.js/device";
 import {OnOffDeviceAdapter} from "./matter-adapters";
 
 const adapters = [

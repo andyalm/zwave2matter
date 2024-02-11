@@ -11,4 +11,7 @@ zwaveDevices(program);
 zwaveListen(program);
 matterDevices(program);
 
-program.parse();
+program.parseAsync().then(() => process.exit(0)).catch(e => {
+  console.error(e);
+  process.exit(1);
+});
