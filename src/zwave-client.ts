@@ -1,11 +1,19 @@
 import WebSocket from "ws";
-import {OutgoingEvent, OutgoingMessage} from "./outgoing-message";
-import {ZwaveInitialResult} from "./zwave-types";
+import { v4 as uuidv4 } from 'uuid';
+import {OutgoingEvent, OutgoingMessage} from "./zwave-types/messages/outgoing-message";
+import {ZwaveCommandClasses, ZwaveInitialResult} from "./zwave-types";
+import {SetValueMessage} from "./zwave-types/messages/set-value-message";
 
 const schemaVersion = 35;
 
 export type MessageSubscription = (message: OutgoingMessage) => void|Promise<void>
 export type EventSubscription = (event: OutgoingEvent) => void|Promise<void>
+export type SetValueArgs = {
+  nodeId: number;
+  commandClass: ZwaveCommandClasses;
+  property: string;
+  value: any;
+}
 
 export class ZwaveClient {
   readonly #serverAddress: string;
@@ -102,5 +110,19 @@ export class ZwaveClient {
         listener(filtered);
       }
     });
+  }
+
+  setValue(args: SetValueArgs) {
+    const message: SetValueMessage = {
+      messageId: uuidv4(),
+      command: "node.set_value",
+      nodeId: args.nodeId,
+      valueId: {
+        commandClass: args.commandClass,
+        property: args.property,
+      },
+      value: args.value,
+    }
+    this.#socket.send(JSON.stringify(message));
   }
 }

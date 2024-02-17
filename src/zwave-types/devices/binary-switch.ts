@@ -15,20 +15,3 @@ export type ValueUpdatedBinarySwitchEvent = {
   }
 }
 
-export type BinarySwitchValue = {
-  "endpoint": number,
-  "commandClass": ZwaveCommandClasses.BinarySwitch,
-  "commandClassName": string,
-  "property": "currentValue",
-  "propertyName": "currentValue",
-  "metadata": {
-    "type": "boolean",
-    "readable": true,
-    "writeable": boolean,
-    "label": string,
-    "stateful": boolean,
-    "secret": boolean
-  },
-  "value": true
-}
-
