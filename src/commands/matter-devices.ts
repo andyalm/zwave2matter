@@ -11,6 +11,7 @@ export function matterDevices(program: Command) {
     .action(async options => {
       await withZwaveClient(options, async (client: ZwaveClient, initialState: ZwaveInitialResult[]) => {
         await withMatterServer(options, async (matterServer) => {
+          await matterServer.start();
           const matterDevices = toMatterDevices(client, initialState);
           const results = matterDevices.map(d => ({
             id: d.id,

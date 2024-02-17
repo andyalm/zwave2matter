@@ -1,9 +1,10 @@
 import { env } from 'process';
 import {ZwaveClient} from "./zwave-client";
-import {Command, program} from "commander";
+import {Command} from "commander";
 import {ZwaveInitialResult} from "./zwave-types";
-import {MatterServer} from "@project-chip/matter-node.js";
-import {StorageManager, StorageBackendMemory} from "@project-chip/matter-node.js/storage";
+import {MatterServer,CommissioningServer} from "@project-chip/matter-node.js";
+import {DeviceTypes} from "@project-chip/matter-node.js/device";
+import {StorageManager, StorageBackendMemory, StorageBackendDisk} from "@project-chip/matter-node.js/storage";
 
 export type EndpointOptions = {
   zwaveEndpoint?: string
@@ -53,12 +54,21 @@ export function waitForSigTerm(): Promise<void> {
   });
 }
 
-export async function withMatterServer(options: any, action: (server: MatterServer) => void|Promise<void>) {
-  const storageManager = new StorageManager(new StorageBackendMemory());
+export type MatterServerOptions = {
+  storagePath?: string,
+  includeCommissioningServer?: boolean
+}
+
+export async function withMatterServer(options: MatterServerOptions, action: (server: MatterServer) => void|Promise<void>) {
+  const storagePath = options.storagePath || env.MATTER_BRIDGE_STORAGE_PATH;
+  const storageBackend = storagePath ? new StorageBackendDisk(storagePath) : new StorageBackendMemory();
+  const storageManager = new StorageManager(storageBackend);
   await storageManager.initialize();
 
   const matterServer = new MatterServer(storageManager);
-  await matterServer.start();
+  if(options.includeCommissioningServer) {
+    await matterServer.addCommissioningServer(createCommissioningServer());
+  }
 
   try {
     const actionReturn = action(matterServer);
@@ -69,4 +79,31 @@ export async function withMatterServer(options: any, action: (server: MatterServ
   finally {
     await matterServer.close();
   }
+}
+
+export function createCommissioningServer(): CommissioningServer {
+  const passcode = env.MATTER_BRIDGE_COMMISSIONING_PASSCODE ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PASSCODE) : 0;
+  const discriminator = env.MATTER_BRIDGE_COMMISSIONING_DISCRIMINATOR ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_DISCRIMINATOR) : 3840;
+  const vendorId = env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID) : 0xfff1;
+  const productId = env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID) : 0x8000;
+  if(passcode < 100000) {
+    throw new Error("Please provide a passcode by setting MATTER_BRIDGE_COMMISSIONING_PASSCODE environment variable and ensure its at least 6 digits");
+  }
+  return new CommissioningServer(
+    {
+      port: env.MATTER_BRIDGE_COMMISSIONING_PORT ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PORT) : 5540,
+      deviceName: 'zwave2matter',
+      deviceType: DeviceTypes.AGGREGATOR.code,
+      passcode,
+      discriminator,
+      basicInformation: {
+        vendorName: 'zwave2matter',
+        vendorId,
+        nodeLabel: 'zwave2matter',
+        productName: 'zwave2matter',
+        productLabel: 'zwave2matter',
+        productId
+      }
+    }
+  );
 }

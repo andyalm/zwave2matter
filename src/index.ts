@@ -2,6 +2,7 @@ import {program} from "commander";
 import {zwaveDevices} from "./commands/zwave-devices";
 import {zwaveListen} from "./commands/zwave-listen";
 import {matterDevices} from "./commands/matter-devices";
+import {matterBridge} from "./commands/matter-bridge";
 
 program
   .name("zwave2matter")
@@ -10,8 +11,11 @@ program
 zwaveDevices(program);
 zwaveListen(program);
 matterDevices(program);
+matterBridge(program);
 
-program.parseAsync().then(() => process.exit(0)).catch(e => {
+const argsFrom = process.argv[0] === 'zwave2matter' ? 'user' : 'node';
+
+program.parseAsync(process.argv, { from: argsFrom }).then(() => process.exit(0)).catch(e => {
   console.error(e);
   process.exit(1);
 });
