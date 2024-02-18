@@ -19,5 +19,6 @@ RUN echo '#!/bin/bash' >> zwave2matter && \
     chmod +x zwave2matter
 
 ENV PATH="/app:${PATH}"
+LABEL org.opencontainers.image.source=https://github.com/andyalm/zwave2matter
 
 CMD ["zwave2matter", "matter-bridge"]
