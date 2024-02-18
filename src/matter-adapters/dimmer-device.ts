@@ -2,10 +2,11 @@ import {DimmableLightDevice} from "@project-chip/matter-node.js/device";
 import {ZwaveCommandClasses, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
+import {BridgedDevice} from "../matter-device-factory";
 
 
-export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDevice> {
-  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): DimmableLightDevice | undefined {
+export class DimmerDeviceAdapter implements MatterDeviceAdapter {
+  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
     const initialOnOff = initialResult.values.find(v => v.commandClass === ZwaveCommandClasses.MultilevelSwitch && v.property === "currentValue");
     if(!initialOnOff) {
       return;
@@ -30,6 +31,9 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDev
       });
     });
 
-    return device;
+    return {
+      name: initialResult.name,
+      device: device
+    };
   }
 }

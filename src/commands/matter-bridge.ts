@@ -23,7 +23,7 @@ export function matterBridge(program: Command) {
           const matterDevices = toMatterDevices(client, initialState);
           for (const device of matterDevices) {
             const name = device.name;
-            aggregator.addBridgedDevice(device, {
+            aggregator.addBridgedDevice(device.device, {
               nodeLabel: name,
               productName: name,
               productLabel: name,
@@ -33,6 +33,7 @@ export function matterBridge(program: Command) {
             });
           }
           const commissioningServer = createCommissioningServer();
+          commissioningServer.addDevice(aggregator);
           matterServer.addCommissioningServer(commissioningServer, { uniqueStorageKey: "zwave2matter-commissioning" });
           await matterServer.start();
           if (!commissioningServer.isCommissioned()) {

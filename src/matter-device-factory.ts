@@ -7,8 +7,13 @@ const adapters = [
   new OnOffDeviceAdapter()
 ]
 
-export function toMatterDevices(zwaveClient: ZwaveClient, initialResults: ZwaveInitialResult[]): (Device|ComposedDevice)[] {
-  const devices: (Device|ComposedDevice)[] = [];
+export type BridgedDevice = {
+  name: string
+  device: Device | ComposedDevice,
+}
+
+export function toMatterDevices(zwaveClient: ZwaveClient, initialResults: ZwaveInitialResult[]): BridgedDevice[] {
+  const devices: BridgedDevice[] = [];
   for (const result of initialResults) {
     for (const adapter of adapters) {
       const device = adapter.tryCreateMatterDevice(zwaveClient, result);

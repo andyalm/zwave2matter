@@ -1,9 +1,9 @@
 import {ZwaveInitialResult} from "./zwave-types";
-import {ComposedDevice, Device} from "@project-chip/matter-node.js/device";
 import {ZwaveClient} from "./zwave-client";
+import {BridgedDevice} from "./matter-device-factory";
 
 
-export interface MatterDeviceAdapter<TDevice extends Device | ComposedDevice> {
-  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): TDevice | undefined;
+export interface MatterDeviceAdapter {
+  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined;
 }
 
