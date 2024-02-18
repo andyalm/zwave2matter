@@ -1,0 +1,23 @@
+name: publish
+on: [push]
+jobs:
+  publish-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Login to ghcr.io
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push docker image
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+          export image_tag=latest
+        else
+          export image_tag=${GITHUB_REF#refs/heads/}
+        fi
+        docker build . --tag ghcr.io/andyalm/zwave2matter:${image_tag} --label org.opencontainers.image.source=https://github.com/andyalm/zwave2matter
+        docker push ghcr.io/andyalm/zwave2matter:${image_tag}
+ 
