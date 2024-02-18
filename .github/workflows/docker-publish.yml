@@ -18,6 +18,6 @@ jobs:
         else
           export image_tag=${GITHUB_REF#refs/heads/}
         fi
-        docker build . --tag ghcr.io/andyalm/zwave2matter:${image_tag} --label org.opencontainers.image.source=https://github.com/andyalm/zwave2matter
+        docker build . --tag ghcr.io/andyalm/zwave2matter:${image_tag}
         docker push ghcr.io/andyalm/zwave2matter:${image_tag}
  
