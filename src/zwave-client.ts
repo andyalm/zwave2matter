@@ -56,27 +56,33 @@ export class ZwaveClient {
         }
       }, 5000);
       this.#socket.on("message", data => {
-        const message = JSON.parse(data.toString()) as OutgoingMessage;
+        try {
+          const message = JSON.parse(data.toString()) as OutgoingMessage;
 
-        for (const subscription of this.#messageSubscriptions) {
-          subscription(message);
-        }
+          for (const subscription of this.#messageSubscriptions) {
+            subscription(message);
+          }
 
-        if (
-          message.type === "result" &&
-          message.messageId === "start-listening-result" &&
-          message.success
-        ) {
-          if(!promiseResolved) {
-            resolve(message.result.state.nodes);
-            promiseResolved = true;
+          if (
+            message.type === "result" &&
+            message.messageId === "start-listening-result" &&
+            message.success
+          ) {
+            if(!promiseResolved) {
+              resolve(message.result.state.nodes);
+              promiseResolved = true;
+            }
+          }
+
+          if(message.type === "event") {
+            for (const subscription of this.#eventSubscriptions) {
+              subscription(message.event);
+            }
           }
         }
-
-        if(message.type === "event") {
-          for (const subscription of this.#eventSubscriptions) {
-            subscription(message.event);
-          }
+        catch(e) {
+          console.error('Unhandled error processing socket message:');
+          console.error(e);
         }
       });
     });

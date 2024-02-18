@@ -12,7 +12,9 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter<OnOffLightDevice>
         return;
       }
       const device = new OnOffLightDevice({
-        onOff: initialOnOff.value
+        onOff: initialOnOff.value,
+      }, {
+        uniqueStorageKey: `zwave-${initialResult.nodeId}`
       });
       device.name = initialResult.name;
       device.addOnOffListener((newValue: boolean, oldValue: boolean) => {
