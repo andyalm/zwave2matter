@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { v4 as uuidv4 } from 'uuid';
 import {OutgoingEvent, OutgoingMessage} from "./zwave-types/messages/outgoing-message";
-import {ZwaveCommandClasses, ZwaveInitialResult} from "./zwave-types";
+import {ZwaveCommandClass, ZwaveInitialResult} from "./zwave-types";
 import {SetValueMessage} from "./zwave-types/messages/set-value-message";
 
 const schemaVersion = 35;
@@ -10,7 +10,7 @@ export type MessageSubscription = (message: OutgoingMessage) => void|Promise<voi
 export type EventSubscription = (event: OutgoingEvent) => void|Promise<void>
 export type SetValueArgs = {
   nodeId: number;
-  commandClass: ZwaveCommandClasses;
+  commandClass: ZwaveCommandClass;
   property: string;
   value: any;
 }

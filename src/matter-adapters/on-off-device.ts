@@ -1,40 +1,37 @@
 import {OnOffLightDevice} from "@project-chip/matter-node.js/device";
-import {ZwaveCommandClasses, ZwaveInitialResult} from "../zwave-types";
+import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
-import {NodeEvent} from "../zwave-types/messages/outgoing-message";
 import {BridgedDevice} from "../matter-device-factory";
+import {ZwaveDevice} from "../zwave-device";
 
 
 export class OnOffDeviceAdapter implements MatterDeviceAdapter {
   tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
-      const initialOnOff = initialResult.values.find(v => v.commandClass === ZwaveCommandClasses.BinarySwitch && v.property === "currentValue");
-      if(!initialOnOff) {
+      const zwaveDevice = new ZwaveDevice(zwaveClient, initialResult, {
+        commandClass: ZwaveCommandClass.BinarySwitch,
+        watchProperties: ["currentValue"]
+      });
+
+      const initialOnOff = zwaveDevice.property<boolean>("currentValue");
+      if(typeof initialOnOff === "undefined") {
         return;
       }
+
       const device = new OnOffLightDevice({
-        onOff: initialOnOff.value,
+        onOff: initialOnOff,
       }, {
         uniqueStorageKey: `zwave-${initialResult.nodeId}`
       });
       device.addOnOffListener((newValue: boolean, oldValue: boolean) => {
-        console.log(`Matter device '${device.name}' requested to set onOff state to ${newValue} for zwave node ${initialResult.nodeId}`);
         if(newValue !== oldValue) {
-          zwaveClient.setValue({
-            nodeId: initialResult.nodeId,
-            commandClass: ZwaveCommandClasses.BinarySwitch,
-            property: "targetValue",
-            value: newValue
-          });
+          console.log(`[MatterDevice] Name='${device.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
+          zwaveDevice.setProperty("targetValue", newValue);
         }
       });
-      zwaveClient.subscribeEvents<NodeEvent>(event => event.source === "node" &&
-        event.nodeId === initialResult.nodeId &&
-        event.args?.commandClass === ZwaveCommandClasses.BinarySwitch &&
-        event.args?.property === "currentValue" ? event : undefined, event => {
-        console.log(`Received message from zwave node ${event.nodeId} to set onOff state for matter device '${device.name}' to ${event.args.newValue}`);
-        if(device.getOnOff() !== event.args.newValue) {
-          device.setOnOff(event.args.newValue);
+      zwaveDevice.onPropertyChanged<boolean>("currentValue", (newValue: boolean) => {
+        if(device.getOnOff() !== newValue) {
+          device.setOnOff(newValue);
         }
       });
 

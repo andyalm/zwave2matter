@@ -1,4 +1,4 @@
-import {ZwaveCommandClasses} from "../command-classes";
+import {ZwaveCommandClass} from "../command-classes";
 
 export type OutgoingEvent = DriverEvent | ControllerEvent | NodeEvent;
 
@@ -18,7 +18,7 @@ export interface NodeEvent<TValue=any> {
   nodeId: number;
   args: {
     "commandClassName": string,
-    "commandClass": ZwaveCommandClasses,
+    "commandClass": ZwaveCommandClass,
     "endpoint": number,
     "property": string,
     "newValue": TValue,
