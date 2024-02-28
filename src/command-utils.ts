@@ -100,7 +100,8 @@ export function createCommissioningServer(): CommissioningServer {
         productName: 'zwave2matter',
         productLabel: 'zwave2matter',
         productId,
-        reachable: true
+        reachable: true,
+        serialNumber: 'zwave2matter',
       }
     }
   );

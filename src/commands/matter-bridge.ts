@@ -27,7 +27,7 @@ export function matterBridge(program: Command) {
               nodeLabel: name,
               productName: name,
               productLabel: name,
-              // serialNumber: `zwave2matter-${device.determineUniqueID()}`,
+              serialNumber: device.device.uniqueStorageKey,
               reachable: true,
               // vendorId: VendorId(0xfff1), //TODO: don't hardcode this
             });

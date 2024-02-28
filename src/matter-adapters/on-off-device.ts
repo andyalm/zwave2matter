@@ -1,4 +1,4 @@
-import {OnOffLightDevice,OnOffPluginUnitDevice} from "@project-chip/matter-node.js/device";
+import {OnOffLightDevice,OnOffPluginUnitDevice,EndpointOptions} from "@project-chip/matter-node.js/device";
 import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
@@ -47,7 +47,7 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
       const initialValues = {
         onOff: onOff
       };
-      const deviceOptions = {
+      const deviceOptions: EndpointOptions = {
         uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
       };
       if(zwaveDevice.name.toLowerCase().includes('light')) {
