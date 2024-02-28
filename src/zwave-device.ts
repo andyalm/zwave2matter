@@ -12,6 +12,7 @@ export type PropertyChangedCallback<TValue=any> = (newValue: TValue) => void;
 export class ZwaveDevice {
   readonly #client: ZwaveClient;
   readonly #nodeId: number;
+  readonly #name: string;
   readonly #commandClass: ZwaveCommandClass;
   readonly #propertyValues: Record<string, any> = {};
   readonly #propertyChangeCallbacks: Record<string, PropertyChangedCallback[]> = {};
@@ -19,6 +20,7 @@ export class ZwaveDevice {
   constructor(client: ZwaveClient, initialResult: ZwaveInitialResult, options: ZwaveDeviceOptions) {
     this.#client = client;
     this.#nodeId = initialResult.nodeId;
+    this.#name = initialResult.name;
     this.#commandClass = options.commandClass;
     options.watchProperties.forEach(propertyName => {
       this.#propertyValues[propertyName] = initialResult.values.find(v => v.property === propertyName)?.value;
@@ -41,6 +43,10 @@ export class ZwaveDevice {
 
   get nodeId() {
     return this.#nodeId;
+  }
+
+  get name() {
+    return this.#name;
   }
 
   property<TValue=any>(propertyName: string): TValue|undefined {

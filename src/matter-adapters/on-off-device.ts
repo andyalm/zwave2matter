@@ -1,4 +1,4 @@
-import {OnOffLightDevice} from "@project-chip/matter-node.js/device";
+import {OnOffLightDevice,OnOffPluginUnitDevice} from "@project-chip/matter-node.js/device";
 import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
@@ -18,11 +18,7 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
         return;
       }
 
-      const device = new OnOffLightDevice({
-        onOff: initialOnOff,
-      }, {
-        uniqueStorageKey: `zwave-${initialResult.nodeId}`
-      });
+      const device = this.#createDevice(zwaveDevice, initialOnOff);
       device.addOnOffListener((newValue: boolean, oldValue: boolean) => {
         if(newValue !== oldValue) {
           console.log(`[MatterDevice] Name='${device.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
@@ -36,8 +32,23 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
       });
 
       return {
-        name: initialResult.name,
+        name: zwaveDevice.name,
         device: device
       };
+    }
+
+    #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
+      const initialValues = {
+        onOff: onOff
+      };
+      const deviceOptions = {
+        uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
+      };
+      if(zwaveDevice.name.toLowerCase().includes('light')) {
+        return new OnOffLightDevice(initialValues, deviceOptions);
+      }
+      else {
+        return new OnOffPluginUnitDevice(initialValues, deviceOptions);
+      }
     }
 }
