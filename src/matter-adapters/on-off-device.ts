@@ -26,7 +26,7 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
 
     const device = this.#createDevice(zwaveDevice, initialOnOff);
     device.addOnOffListener((newValue: boolean, oldValue: boolean) => {
-      if(newValue !== oldValue) {
+      if(newValue !== oldValue && zwaveDevice.property<boolean>("currentValue") !== newValue) {
         console.log(`[MatterDevice] Name='${device.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
         zwaveDevice.setProperty("targetValue", newValue);
       }
