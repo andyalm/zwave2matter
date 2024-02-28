@@ -1,6 +1,6 @@
-import {ZwaveCommandClasses} from "./command-classes";
+import {ZwaveCommandClass} from "./command-classes";
 
-export type ZwaveInitialValueType<TCommandClass extends ZwaveCommandClasses=ZwaveCommandClasses, TValue=any> = {
+export type ZwaveInitialValueType<TCommandClass extends ZwaveCommandClass=ZwaveCommandClass, TValue=any> = {
   endpoint: number,
   commandClass: TCommandClass,
   commandClassName: string,
@@ -17,7 +17,7 @@ export type ZwaveInitialValueType<TCommandClass extends ZwaveCommandClasses=Zwav
   value: TValue
 }
 
-export type ZwaveInitialResult<TCommandClass extends ZwaveCommandClasses=ZwaveCommandClasses, TValue=any> = {
+export type ZwaveInitialResult<TCommandClass extends ZwaveCommandClass=ZwaveCommandClass, TValue=any> = {
   nodeId: number,
   index: number,
   status: number,

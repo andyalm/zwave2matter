@@ -1,4 +1,4 @@
-import {ZwaveCommandClasses} from "../command-classes";
+import {ZwaveCommandClass} from "../command-classes";
 
 export type ValueUpdatedMultilevelSwitchEvent = {
   source: 'node',
@@ -6,7 +6,7 @@ export type ValueUpdatedMultilevelSwitchEvent = {
   nodeId: number,
   args: {
     commandClassName: string,
-    commandClass: ZwaveCommandClasses.MultilevelSwitch,
+    commandClass: ZwaveCommandClass.MultilevelSwitch,
     property: 'currentValue'|'targetValue',
     propertyName: 'currentValue'|'targetValue',
     endpoint: number,

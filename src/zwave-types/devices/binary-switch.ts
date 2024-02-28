@@ -1,4 +1,4 @@
-import {ZwaveCommandClasses} from "../command-classes";
+import {ZwaveCommandClass} from "../command-classes";
 
 export type ValueUpdatedBinarySwitchEvent = {
   source: "node",
@@ -6,7 +6,7 @@ export type ValueUpdatedBinarySwitchEvent = {
   nodeId: number,
   args: {
     "commandClassName": string,
-    "commandClass": ZwaveCommandClasses.BinarySwitch,
+    "commandClass": ZwaveCommandClass.BinarySwitch,
     "property": "currentValue",
     "endpoint": number,
     "newValue": boolean,
