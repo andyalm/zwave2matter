@@ -1,6 +1,7 @@
 import {ZwaveClient} from "./zwave-client";
 import {ZwaveCommandClass, ZwaveInitialResult} from "./zwave-types";
 import {NodeEvent} from "./zwave-types/messages/outgoing-message";
+import {ZwavePropertyManager} from "./zwave-property-manager";
 
 export type ZwaveDeviceOptions = {
   commandClass: ZwaveCommandClass;
@@ -67,5 +68,19 @@ export class ZwaveDevice {
       this.#propertyChangeCallbacks[propertyName] = [];
     }
     this.#propertyChangeCallbacks[propertyName].push(callback);
+  }
+
+  createPropertyManager<TValue>(currentPropertyName: string, targetPropertyName: string) {
+    const currentValue = this.#propertyValues[currentPropertyName];
+    return new ZwavePropertyManager<TValue>(currentPropertyName,
+      targetPropertyName,
+      currentValue,
+      (propertyName, value) => this.#client.setValue({
+        nodeId: this.#nodeId,
+        property: propertyName,
+        commandClass: this.#commandClass,
+        value: value
+      }),
+      (propertyName, callback) => this.onPropertyChanged<TValue>(propertyName, callback));
   }
 }

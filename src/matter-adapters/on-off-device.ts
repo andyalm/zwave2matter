@@ -24,22 +24,23 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
       return;
     }
 
-    const device = this.#createDevice(zwaveDevice, initialOnOff);
-    device.addOnOffListener((newValue: boolean, oldValue: boolean) => {
+    const matterDevice = this.#createDevice(zwaveDevice, initialOnOff);
+    const zwaveOnOff = zwaveDevice.createPropertyManager<boolean>('currentValue', 'targetValue');
+    matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {
       if(newValue !== oldValue && zwaveDevice.property<boolean>("currentValue") !== newValue) {
-        console.log(`[MatterDevice] Name='${device.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
-        zwaveDevice.setProperty("targetValue", newValue);
+        console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
+        zwaveOnOff.setValue(newValue);
       }
     });
-    zwaveDevice.onPropertyChanged<boolean>("currentValue", (newValue: boolean) => {
-      if(device.getOnOff() !== newValue) {
-        device.setOnOff(newValue);
+    zwaveOnOff.addChangeListener((newValue: boolean) => {
+      if(matterDevice.getOnOff() !== newValue) {
+        matterDevice.setOnOff(newValue);
       }
     });
 
     return {
       name: zwaveDevice.name,
-      device: device
+      device: matterDevice
     };
   }
 
