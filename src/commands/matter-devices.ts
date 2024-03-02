@@ -14,7 +14,7 @@ export function matterDevices(program: Command) {
           await matterServer.start();
           const matterDevices = toMatterDevices(client, initialState);
           const results = matterDevices.map(d => ({
-            id: d.id,
+            id: d.device.id,
             name: d.name,
             type: d.constructor.name,
             zwave: options.zwaveInfo ? initialState.find(s => s.name === d.name) : undefined

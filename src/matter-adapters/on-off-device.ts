@@ -44,18 +44,18 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
     };
   }
 
-    #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
-      const initialValues = {
-        onOff: onOff
-      };
-      const deviceOptions: EndpointOptions = {
-        uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
-      };
-      if(zwaveDevice.name.toLowerCase().includes('light')) {
-        return new OnOffLightDevice(initialValues, deviceOptions);
-      }
-      else {
-        return new OnOffPluginUnitDevice(initialValues, deviceOptions);
-      }
+  #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
+    const initialValues = {
+      onOff: onOff
+    };
+    const deviceOptions: EndpointOptions = {
+      uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
+    };
+    if(zwaveDevice.name.toLowerCase().includes('light')) {
+      return new OnOffLightDevice(initialValues, deviceOptions);
     }
+    else {
+      return new OnOffPluginUnitDevice(initialValues, deviceOptions);
+    }
+  }
 }
