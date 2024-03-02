@@ -79,20 +79,13 @@ export async function withMatterServer(options: MatterServerOptions, action: (se
 }
 
 export function createCommissioningServer(): CommissioningServer {
-  const passcode = env.MATTER_BRIDGE_COMMISSIONING_PASSCODE ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PASSCODE) : 0;
-  const discriminator = env.MATTER_BRIDGE_COMMISSIONING_DISCRIMINATOR ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_DISCRIMINATOR) : 3840;
   const vendorId = env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID) : 0xfff1;
   const productId = env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID) : 0x8333;
-  const listeningAddressIpv4 = env.MATTER_BRIDGE_COMMISSIONING_ADDRESS_IPV4;
-  if(passcode < 100000) {
-    throw new Error("Please provide a passcode by setting MATTER_BRIDGE_COMMISSIONING_PASSCODE environment variable and ensure its at least 6 digits");
-  }
+
   return new CommissioningServer(
     {
       deviceName: 'zwave2matter',
       deviceType: DeviceTypes.AGGREGATOR.code,
-      // passcode,
-      // discriminator,
       basicInformation: {
         vendorName: 'zwave2matter',
         vendorId,
