@@ -2,7 +2,7 @@ import {OnOffLightDevice,OnOffPluginUnitDevice,EndpointOptions} from "@project-c
 import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
-import {BridgedDevice} from "../matter-device-factory";
+import {BridgedDevice} from "../matter-device-adapter";
 import {ZwaveDevice} from "../zwave-device";
 
 

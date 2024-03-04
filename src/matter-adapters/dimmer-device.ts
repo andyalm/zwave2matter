@@ -2,7 +2,7 @@ import {DimmableLightDevice,EndpointOptions} from "@project-chip/matter-node.js/
 import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
-import {BridgedDevice} from "../matter-device-factory";
+import {BridgedDevice} from "../matter-device-adapter";
 import {ZwaveDevice} from "../zwave-device";
 
 const MAX_DIMMER_LEVEL = 255;

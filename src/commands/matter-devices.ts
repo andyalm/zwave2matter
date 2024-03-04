@@ -1,7 +1,7 @@
 import {Command} from "commander";
 import {ZwaveClient} from "../zwave-client";
 import {addZwaveOptions, withZwaveClient, withMatterServer} from "../command-utils";
-import {toMatterDevices} from "../matter-device-factory";
+import {toMatterDevices} from "../matter-device-adapter";
 import {ZwaveInitialResult} from "../zwave-types";
 
 export function matterDevices(program: Command) {

@@ -35,7 +35,12 @@ type ZwaveClientAction = (client: ZwaveClient, initialState: ZwaveInitialResult[
 
 export async function withZwaveClient(options: EndpointOptions, action: ZwaveClientAction) {
   const client = zwaveClient(options);
-  const initialState = await client.start();
+  let initialState = await client.start();
+  if(env.ZWAVE_DEVICE_NAME_FILTER) {
+    const filter = env.ZWAVE_DEVICE_NAME_FILTER;
+
+    initialState = initialState.filter(s => s.name.includes(filter));
+  }
   try {
     const actionReturn = action(client, initialState);
     if(actionReturn instanceof Promise) {
