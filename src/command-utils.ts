@@ -66,6 +66,10 @@ export type MatterServerOptions = {
 export async function withMatterServer(options: MatterServerOptions, action: (server: MatterServer) => void|Promise<void>) {
   const storagePath = options.storagePath || env.MATTER_BRIDGE_STORAGE_PATH;
   const mdnsInterface = env.MATTER_BRIDGE_MDNS_INTERFACE;
+  const logLevel = env.ZWAVE2MATTER_LOG_LEVEL || 'info';
+  if(logLevel !== 'debug') {
+    console.debug = () => {};
+  }
   const storageBackend = storagePath ? new StorageBackendDisk(storagePath) : new StorageBackendMemory();
   const storageManager = new StorageManager(storageBackend);
   await storageManager.initialize();
