@@ -1,18 +1,23 @@
 import {DimmableLightDevice,EndpointOptions} from "@project-chip/matter-node.js/device";
-import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
+import {ZwaveCommandClass, ZwaveInitialResult, ZwaveInitialValueType} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
 import {BridgedDevice} from "../matter-device-adapter";
 import {ZwaveDevice} from "../zwave-device";
 
-const MAX_DIMMER_LEVEL = 255;
-const OFF_LEVEL = 0;
-
 export class DimmerDeviceAdapter implements MatterDeviceAdapter {
   tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
-    if(!initialResult.values.find(v =>
+    const currentValueConfig = initialResult.values.find(v =>
       v.commandClass === ZwaveCommandClass.MultilevelSwitch &&
-      v.property === "currentValue")) {
+      v.property === "currentValue" &&
+      typeof v.value === "number");
+
+    if(!currentValueConfig) {
+      return;
+    }
+
+    if(typeof(currentValueConfig.metadata.min) !== "number" || typeof(currentValueConfig.metadata.max) !== "number") {
+      console.error(`[ERROR] Zwave NodeId='${initialResult.nodeId}' is a multiswitch dimmer but min/max values are not defined in metadata. Skipping...`);
       return;
     }
 
@@ -21,15 +26,10 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       watchProperties: ["currentValue"]
     });
 
-    const initialOnOff = zwaveDevice.property<number>("currentValue");
-    if(typeof initialOnOff === "undefined") {
-      return;
-    }
-
-    const matterDevice = this.#createDevice(zwaveDevice, initialOnOff);
+    const matterDevice = this.#createDevice(zwaveDevice, currentValueConfig as ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>);
     const zwaveOnOff = zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
     matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {
-      const dimmerValue = newValue ? MAX_DIMMER_LEVEL : OFF_LEVEL;
+      const dimmerValue = newValue ? currentValueConfig.metadata.max : currentValueConfig.metadata.min;
       if(zwaveDevice.property<number>("currentValue") !== dimmerValue) {
         console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`);
         zwaveOnOff.setValue(dimmerValue);
@@ -53,18 +53,18 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
     };
   }
 
-  #createDevice(zwaveDevice: ZwaveDevice, initialLevel: number): DimmableLightDevice {
+  #createDevice(zwaveDevice: ZwaveDevice, initialValue: ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>): DimmableLightDevice {
     const initialValues = {
-      onOff: initialLevel > 0,
+      onOff: initialValue.value > 0,
     };
     const deviceOptions: EndpointOptions = {
       uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
     };
     return new DimmableLightDevice(initialValues,{
-      minLevel: OFF_LEVEL,
-      maxLevel: MAX_DIMMER_LEVEL,
-      onLevel: MAX_DIMMER_LEVEL,
-      currentLevel: initialLevel,
+      minLevel: initialValue.metadata.min!,
+      maxLevel: initialValue.metadata.max!,
+      onLevel: initialValue.metadata.max!,
+      currentLevel: initialValue.value,
       options: {
         executeIfOff: false,
         coupleColorTempToLevel: false,

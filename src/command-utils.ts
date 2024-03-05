@@ -39,7 +39,7 @@ export async function withZwaveClient(options: EndpointOptions, action: ZwaveCli
   if(env.ZWAVE_DEVICE_NAME_FILTER) {
     const filter = env.ZWAVE_DEVICE_NAME_FILTER;
 
-    initialState = initialState.filter(s => s.name.includes(filter));
+    initialState = initialState.filter(s => s.name?.includes(filter));
   }
   try {
     const actionReturn = action(client, initialState);

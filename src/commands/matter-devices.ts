@@ -16,7 +16,7 @@ export function matterDevices(program: Command) {
           const results = matterDevices.map(d => ({
             id: d.device.id,
             name: d.name,
-            type: d.constructor.name,
+            type: d.device.constructor.name,
             zwave: options.zwaveInfo ? initialState.find(s => s.name === d.name) : undefined
           }));
           console.log(JSON.stringify(results, null, 2));

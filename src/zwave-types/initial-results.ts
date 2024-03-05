@@ -13,6 +13,8 @@ export type ZwaveInitialValueType<TCommandClass extends ZwaveCommandClass=ZwaveC
     label: string,
     stateful: boolean,
     secret: boolean
+    min?: TValue,
+    max?: TValue,
   },
   value: TValue
 }
