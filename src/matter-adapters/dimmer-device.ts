@@ -59,9 +59,14 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
     });
     zwaveOnOff.addChangeListener((newZwaveValue: number) => {
       const matterLevel = toMatterLevel(newZwaveValue, currentValueConfig.metadata.min, currentValueConfig.metadata.max);
+      const onOff = matterLevel !== MATTER_OFF_LEVEL;
       if(matterDevice.getCurrentLevel() !== matterLevel) {
         console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' currentLevel is ${matterDevice.getCurrentLevel()}, new matterLevel='${matterLevel}', zwaveLevel='${newZwaveValue}'`);
         matterDevice.setCurrentLevel(matterLevel);
+      }
+      if(matterDevice.getOnOff() !== onOff) {
+        console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff is ${matterDevice.getOnOff()}, new onOff='${onOff}'`);
+        matterDevice.setOnOff(onOff);
       }
     });
 
