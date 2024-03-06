@@ -36,7 +36,7 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       if(newValue && oldValue) {
         return;
       }
-      const zwaveDimmerValue = newValue ? levelConverter.toZwaveLevel(matterDevice.getCurrentLevel()) : currentValueConfig.metadata.min;
+      const zwaveDimmerValue = newValue ? (levelConverter.toZwaveLevel(matterDevice.getCurrentLevel()) || currentValueConfig.metadata.max) : currentValueConfig.metadata.min;
       if(zwaveDevice.property<number>("currentValue") !== zwaveDimmerValue) {
         console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}' (zwave dimmer value: ${zwaveDimmerValue})`);
         zwaveOnOff.setValue(zwaveDimmerValue);
