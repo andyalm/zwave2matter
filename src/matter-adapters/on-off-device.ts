@@ -2,7 +2,7 @@ import {OnOffLightDevice,OnOffPluginUnitDevice,EndpointOptions} from "@project-c
 import {ZwaveCommandClass, ZwaveInitialResult} from "../zwave-types";
 import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
-import {BridgedDevice} from "../matter-device-factory";
+import {BridgedDevice} from "../matter-device-adapter";
 import {ZwaveDevice} from "../zwave-device";
 
 
@@ -44,18 +44,18 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
     };
   }
 
-    #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
-      const initialValues = {
-        onOff: onOff
-      };
-      const deviceOptions: EndpointOptions = {
-        uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
-      };
-      if(zwaveDevice.name.toLowerCase().includes('light')) {
-        return new OnOffLightDevice(initialValues, deviceOptions);
-      }
-      else {
-        return new OnOffPluginUnitDevice(initialValues, deviceOptions);
-      }
+  #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
+    const initialValues = {
+      onOff: onOff
+    };
+    const deviceOptions: EndpointOptions = {
+      uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
+    };
+    if(zwaveDevice.name.toLowerCase().includes('light')) {
+      return new OnOffLightDevice(initialValues, deviceOptions);
     }
+    else {
+      return new OnOffPluginUnitDevice(initialValues, deviceOptions);
+    }
+  }
 }

@@ -1,7 +1,7 @@
 import {Command} from "commander";
 import {ZwaveClient} from "../zwave-client";
 import {addZwaveOptions, withZwaveClient, withMatterServer} from "../command-utils";
-import {toMatterDevices} from "../matter-device-factory";
+import {toMatterDevices} from "../matter-device-adapter";
 import {ZwaveInitialResult} from "../zwave-types";
 
 export function matterDevices(program: Command) {
@@ -14,9 +14,9 @@ export function matterDevices(program: Command) {
           await matterServer.start();
           const matterDevices = toMatterDevices(client, initialState);
           const results = matterDevices.map(d => ({
-            id: d.id,
+            id: d.device.id,
             name: d.name,
-            type: d.constructor.name,
+            type: d.device.constructor.name,
             zwave: options.zwaveInfo ? initialState.find(s => s.name === d.name) : undefined
           }));
           console.log(JSON.stringify(results, null, 2));

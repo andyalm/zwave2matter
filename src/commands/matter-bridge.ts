@@ -8,7 +8,7 @@ import {
 } from "../command-utils";
 import {ZwaveClient} from "../zwave-client";
 import {ZwaveInitialResult} from "../zwave-types";
-import {toMatterDevices} from "../matter-device-factory";
+import {toMatterDevices} from "../matter-device-adapter";
 import {Aggregator} from "@project-chip/matter-node.js/device";
 import {QrCode} from "@project-chip/matter-node.js/schema";
 import {VendorId} from "@project-chip/matter-node.js/datatype";
