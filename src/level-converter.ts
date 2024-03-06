@@ -11,10 +11,19 @@ export class LevelConverter {
   }
 
   toMatterLevel(zwaveLevel: number): number {
-    return Math.round((zwaveLevel - this.#zwaveMinLevel) / (this.#zwaveMaxLevel - this.#zwaveMinLevel) * (LevelConverter.MatterMaxLevel - LevelConverter.MatterMinLevel) + LevelConverter.MatterMinLevel);
+    return Math.round(
+      ((zwaveLevel - this.#zwaveMinLevel) / (this.#zwaveMaxLevel - this.#zwaveMinLevel)) *
+        (LevelConverter.MatterMaxLevel - LevelConverter.MatterMinLevel) +
+        LevelConverter.MatterMinLevel
+    );
   }
 
   toZwaveLevel(matterLevel: number): number {
-    return Math.round((matterLevel - LevelConverter.MatterMinLevel) / (LevelConverter.MatterMaxLevel - LevelConverter.MatterMinLevel) * (this.#zwaveMaxLevel - this.#zwaveMinLevel) + this.#zwaveMinLevel);
+    return Math.round(
+      ((matterLevel - LevelConverter.MatterMinLevel) /
+        (LevelConverter.MatterMaxLevel - LevelConverter.MatterMinLevel)) *
+        (this.#zwaveMaxLevel - this.#zwaveMinLevel) +
+        this.#zwaveMinLevel
+    );
   }
 }

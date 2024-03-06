@@ -11,17 +11,19 @@ export class ZwavePropertyManager<TValue> {
 
   #lastSetAttempt: Date;
 
-  constructor(currentPropertyName: string,
-              targetPropertyName: string,
-              currentValue: TValue,
-              valueSetter: PropertyValueSetter<TValue>,
-              propertyChangeSubscribable: PropertyChangeSubscribable<TValue>) {
+  constructor(
+    currentPropertyName: string,
+    targetPropertyName: string,
+    currentValue: TValue,
+    valueSetter: PropertyValueSetter<TValue>,
+    propertyChangeSubscribable: PropertyChangeSubscribable<TValue>
+  ) {
     this.#targetPropertyName = targetPropertyName;
     this.#currentValue = currentValue;
     this.#valueSetter = valueSetter;
-    propertyChangeSubscribable(currentPropertyName, newValue => {
+    propertyChangeSubscribable(currentPropertyName, (newValue) => {
       this.#currentValue = newValue;
-      for(const handler of this.#propertyChangeHandlers) {
+      for (const handler of this.#propertyChangeHandlers) {
         handler(newValue);
       }
     });
@@ -38,12 +40,11 @@ export class ZwavePropertyManager<TValue> {
       this.#lastSetAttempt = thisAttempt;
       this.#targetValue = targetValue;
       this.#valueSetter(this.#targetPropertyName, targetValue);
-    }
-    else {
+    } else {
       this.#lastSetAttempt = thisAttempt;
       this.#targetValue = targetValue;
       setTimeout(() => {
-        if(new Date().getTime() - this.#lastSetAttempt.getTime() > 1000 && this.#targetValue) {
+        if (new Date().getTime() - this.#lastSetAttempt.getTime() > 1000 && this.#targetValue) {
           this.#valueSetter(this.#targetPropertyName, this.#targetValue);
           this.#targetValue = undefined;
         }

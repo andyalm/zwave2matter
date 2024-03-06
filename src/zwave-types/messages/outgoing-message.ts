@@ -1,34 +1,34 @@
-import {ZwaveCommandClass} from "../command-classes";
+import { ZwaveCommandClass } from '../command-classes';
 
 export type OutgoingEvent = DriverEvent | ControllerEvent | NodeEvent;
 
 export interface DriverEvent {
-  source: "driver";
+  source: 'driver';
   event: string;
 }
 
 export interface ControllerEvent {
-  source: "controller";
+  source: 'controller';
   event: string;
 }
 
-export interface NodeEvent<TValue=any> {
-  source: "node";
+export interface NodeEvent<TValue = any> {
+  source: 'node';
   event: string;
   nodeId: number;
   args: {
-    "commandClassName": string,
-    "commandClass": ZwaveCommandClass,
-    "endpoint": number,
-    "property": string,
-    "newValue": TValue,
-    "prevValue": TValue,
-    "propertyName": string
-  }
+    commandClassName: string;
+    commandClass: ZwaveCommandClass;
+    endpoint: number;
+    property: string;
+    newValue: TValue;
+    prevValue: TValue;
+    propertyName: string;
+  };
 }
 
 interface OutgoingVersionMessage {
-  type: "version";
+  type: 'version';
   driverVersion: string;
   serverVersion: string;
   homeId: number | undefined;
@@ -37,12 +37,12 @@ interface OutgoingVersionMessage {
 }
 
 interface OutgoingEventMessage {
-  type: "event";
+  type: 'event';
   event: OutgoingEvent;
 }
 
 interface OutgoingResultMessageError {
-  type: "result";
+  type: 'result';
   messageId: string;
   success: false;
   errorCode: string;
@@ -51,10 +51,10 @@ interface OutgoingResultMessageError {
 }
 
 interface OutgoingResultMessageZWaveError {
-  type: "result";
+  type: 'result';
   messageId: string;
   success: false;
-  errorCode: "zwave_error";
+  errorCode: 'zwave_error';
   zwaveErrorCode: string;
   zwaveErrorCodeName?: string;
   zwaveErrorMessage: string;
@@ -78,12 +78,11 @@ export interface ServerResultTypes {
 //   UtilsResultTypes;
 export type ResultTypes = unknown;
 
-
 export interface OutgoingResultMessageSuccess {
-  type: "result";
+  type: 'result';
   messageId: string;
   success: true;
-  result: any;// ResultTypes[keyof ResultTypes];
+  result: any; // ResultTypes[keyof ResultTypes];
 }
 
 export type OutgoingMessage =

@@ -1,8 +1,8 @@
-import {ZwaveCommandClass} from "../command-classes";
+import { ZwaveCommandClass } from '../command-classes';
 
 export type SetValueMessage = {
   messageId: string;
-  command: "node.set_value";
+  command: 'node.set_value';
   nodeId: number;
   valueId: {
     commandClass: ZwaveCommandClass;
@@ -11,4 +11,4 @@ export type SetValueMessage = {
     propertyKey?: string | number;
   };
   value: any;
-}
+};

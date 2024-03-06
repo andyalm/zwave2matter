@@ -13,7 +13,7 @@ services:
     container_name: zwave2matter
     image: ghcr.io/andyalm/zwave2matter
     volumes:
-      - "/home/my-user/apps/zwave2matter/data:/app/data"
+      - '/home/my-user/apps/zwave2matter/data:/app/data'
     restart: unless-stopped
     network_mode: host
     environment:
