@@ -4,17 +4,7 @@ import {MatterDeviceAdapter} from "../matter-device-adapter";
 import {ZwaveClient} from "../zwave-client";
 import {BridgedDevice} from "../matter-device-adapter";
 import {ZwaveDevice} from "../zwave-device";
-
-const MATTER_OFF_LEVEL = 0;
-const MATTER_ON_LEVEL = 254;
-
-function toMatterLevel(zwaveLevel: number, minZwaveLevel: number, maxZwaveLevel: number): number {
-  return Math.round((zwaveLevel - minZwaveLevel) / (maxZwaveLevel - minZwaveLevel) * (MATTER_ON_LEVEL - MATTER_OFF_LEVEL) + MATTER_OFF_LEVEL);
-}
-
-function toZwaveLevel(matterLevel: number, minZwaveLevel: number, maxZwaveLevel: number): number {
-  return Math.round((matterLevel - MATTER_OFF_LEVEL) / (MATTER_ON_LEVEL - MATTER_OFF_LEVEL) * (maxZwaveLevel - minZwaveLevel) + minZwaveLevel);
-}
+import {LevelConverter} from "../level-converter";
 
 export class DimmerDeviceAdapter implements MatterDeviceAdapter {
   tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
@@ -32,12 +22,14 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       return;
     }
 
+    const levelConverter = new LevelConverter(currentValueConfig.metadata.min, currentValueConfig.metadata.max);
+
     const zwaveDevice = new ZwaveDevice(zwaveClient, initialResult, {
       commandClass: ZwaveCommandClass.MultilevelSwitch,
       watchProperties: ["currentValue"]
     });
 
-    const matterDevice = this.#createDevice(zwaveDevice, currentValueConfig as ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>);
+    const matterDevice = this.#createDevice(zwaveDevice, levelConverter, currentValueConfig as ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>);
     const zwaveOnOff = zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
     matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {
       // onOff listener fires when the level is changing, if we are changing from one dimmer level to another, we don't want to do anything here
@@ -51,15 +43,15 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       }
     });
     matterDevice.addCurrentLevelListener((newMatterLevel: number, oldMatterLevel: number) => {
-      const zwaveLevel = toZwaveLevel(newMatterLevel, currentValueConfig.metadata.min, currentValueConfig.metadata.max);
+      const zwaveLevel = levelConverter.toZwaveLevel(newMatterLevel);
       if(newMatterLevel !== oldMatterLevel && zwaveDevice.property<number>("currentValue") !== zwaveLevel) {
         console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' currentLevel state requested to change to matterLevel='${newMatterLevel}', zwaveLevel='${zwaveLevel}'`);
         zwaveOnOff.setValue(zwaveLevel);
       }
     });
     zwaveOnOff.addChangeListener((newZwaveValue: number) => {
-      const matterLevel = toMatterLevel(newZwaveValue, currentValueConfig.metadata.min, currentValueConfig.metadata.max);
-      const onOff = matterLevel !== MATTER_OFF_LEVEL;
+      const matterLevel = levelConverter.toMatterLevel(newZwaveValue);
+      const onOff = matterLevel !== LevelConverter.MatterMinLevel;
       if(matterDevice.getCurrentLevel() !== matterLevel) {
         console.log(`[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' currentLevel is ${matterDevice.getCurrentLevel()}, new matterLevel='${matterLevel}', zwaveLevel='${newZwaveValue}'`);
         matterDevice.setCurrentLevel(matterLevel);
@@ -76,7 +68,7 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
     };
   }
 
-  #createDevice(zwaveDevice: ZwaveDevice, initialValue: ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>): DimmableLightDevice {
+  #createDevice(zwaveDevice: ZwaveDevice, levelConverter: LevelConverter, initialValue: ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>): DimmableLightDevice {
     const initialValues = {
       onOff: initialValue.value > 0,
     };
@@ -84,10 +76,10 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`
     };
     return new DimmableLightDevice(initialValues,{
-      minLevel: MATTER_OFF_LEVEL,
-      maxLevel: MATTER_ON_LEVEL,
-      onLevel: MATTER_ON_LEVEL,
-      currentLevel: toMatterLevel(initialValue.value, initialValue.metadata.min!, initialValue.metadata.max!),
+      minLevel: LevelConverter.MatterMinLevel,
+      maxLevel: LevelConverter.MatterMaxLevel,
+      onLevel: LevelConverter.MatterMaxLevel,
+      currentLevel: levelConverter.toMatterLevel(initialValue.value),
       options: {
         executeIfOff: false,
         coupleColorTempToLevel: false,
