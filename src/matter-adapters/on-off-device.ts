@@ -1,12 +1,18 @@
-import { OnOffLightDevice, OnOffPluginUnitDevice, EndpointOptions } from '@project-chip/matter-node.js/device';
+import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
+import { OnOffPlugInUnitDevice } from '@project-chip/matter.js/devices/OnOffPlugInUnitDevice';
+import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { ZwaveCommandClass, ZwaveInitialResult } from '../zwave-types';
-import { MatterDeviceAdapter } from '../matter-device-adapter';
+import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../matter-device-adapter';
 import { ZwaveClient } from '../zwave-client';
-import { BridgedDevice } from '../matter-device-adapter';
 import { ZwaveDevice } from '../zwave-device';
 
-export class OnOffDeviceAdapter implements MatterDeviceAdapter {
-  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
+type OnOffDeviceTypes = OnOffLightDevice | OnOffPlugInUnitDevice;
+
+export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> {
+  static tryCreateMatterDevice(
+    zwaveClient: ZwaveClient,
+    initialResult: ZwaveInitialResult
+  ): ZwaveMatterDevice<OnOffDeviceTypes> | undefined {
     if (
       !initialResult.values.find(
         (v) => v.commandClass === ZwaveCommandClass.BinarySwitch && v.property === 'currentValue'
@@ -25,39 +31,46 @@ export class OnOffDeviceAdapter implements MatterDeviceAdapter {
       return;
     }
 
-    const matterDevice = this.#createDevice(zwaveDevice, initialOnOff);
-    const zwaveOnOff = zwaveDevice.createPropertyManager<boolean>('currentValue', 'targetValue');
-    matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {
-      if (newValue !== oldValue && zwaveDevice.property<boolean>('currentValue') !== newValue) {
+    const matterDeviceType = this.#getDeviceType(zwaveDevice);
+
+    return new OnOffDeviceAdapter(zwaveDevice, matterDeviceType);
+  }
+
+  getCurrentState(): Endpoint.Options<OnOffDeviceTypes> {
+    return {
+      onOff: {
+        onOff: this.zwaveDevice.property<boolean>('currentValue'),
+      },
+    };
+  }
+
+  subscribeEvents(endpoint: Endpoint<OnOffDeviceTypes>) {
+    const zwaveOnOff = this.zwaveDevice.createPropertyManager<boolean>('currentValue', 'targetValue');
+    endpoint.events.onOff.onOff$Change.on((newValue) => {
+      if (this.zwaveDevice.property<boolean>('currentValue') !== newValue) {
         console.log(
-          `[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}'`
+          `[MatterEvent.onOff$Change(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] onOff->'${newValue}'`
         );
         zwaveOnOff.setValue(newValue);
       }
     });
-    zwaveOnOff.addChangeListener((newValue: boolean) => {
-      if (matterDevice.getOnOff() !== newValue) {
-        matterDevice.setOnOff(newValue);
-      }
+    zwaveOnOff.addChangeListener(async (newValue: boolean) => {
+      console.log(
+        `[ZwaveEvent.currentValue$Change(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] onOff->'${newValue}'`
+      );
+      await endpoint.set({
+        onOff: {
+          onOff: newValue,
+        },
+      });
     });
-
-    return {
-      name: zwaveDevice.name,
-      device: matterDevice,
-    };
   }
 
-  #createDevice(zwaveDevice: ZwaveDevice, onOff: boolean): OnOffLightDevice | OnOffPluginUnitDevice {
-    const initialValues = {
-      onOff: onOff,
-    };
-    const deviceOptions: EndpointOptions = {
-      uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`,
-    };
+  static #getDeviceType(zwaveDevice: ZwaveDevice): OnOffLightDevice | OnOffPlugInUnitDevice {
     if (zwaveDevice.name.toLowerCase().includes('light')) {
-      return new OnOffLightDevice(initialValues, deviceOptions);
+      return OnOffLightDevice;
     } else {
-      return new OnOffPluginUnitDevice(initialValues, deviceOptions);
+      return OnOffPlugInUnitDevice;
     }
   }
 }

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { ZwaveClient } from '../zwave-client';
-import { addZwaveOptions, withZwaveClient, withMatterServer } from '../command-utils';
-import { toMatterDevices } from '../matter-device-adapter';
+import { addZwaveOptions, withZwaveClient } from '../command-utils';
+import { tryCreateMatterDevice } from '../matter-device-adapter';
 import { ZwaveInitialResult } from '../zwave-types';
 
 export function matterDevices(program: Command) {
@@ -13,17 +13,21 @@ export function matterDevices(program: Command) {
     .option('--zwave-info', 'Includes details about the zwave state that the matter device was created from')
     .action(async (options) => {
       await withZwaveClient(options, async (client: ZwaveClient, initialState: ZwaveInitialResult[]) => {
-        await withMatterServer(options, async (matterServer) => {
-          await matterServer.start();
-          const matterDevices = toMatterDevices(client, initialState);
-          const results = matterDevices.map((d) => ({
-            id: d.device.id,
-            name: d.name,
-            type: d.device.constructor.name,
-            zwave: options.zwaveInfo ? initialState.find((s) => s.name === d.name) : undefined,
-          }));
-          console.log(JSON.stringify(results, null, 2));
-        });
+        const devices: any[] = [];
+        for (const initialResult of initialState) {
+          const matterResult = tryCreateMatterDevice(client, initialResult);
+          if (matterResult) {
+            devices.push({
+              nodeId: matterResult.device.nodeId,
+              name: matterResult.device.name,
+              endpointType: {
+                deviceType: matterResult.device.endpointType.deviceType,
+                deviceClasses: matterResult.device.endpointType.deviceClass,
+              },
+            });
+          }
+        }
+        console.log(JSON.stringify(devices, null, 2));
       });
     });
 }

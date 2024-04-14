@@ -2,9 +2,10 @@ import { env } from 'process';
 import { ZwaveClient } from './zwave-client';
 import { Command } from 'commander';
 import { ZwaveInitialResult } from './zwave-types';
-import { MatterServer, CommissioningServer } from '@project-chip/matter-node.js';
 import { DeviceTypes } from '@project-chip/matter-node.js/device';
-import { StorageManager, StorageBackendMemory, StorageBackendDisk } from '@project-chip/matter-node.js/storage';
+import { DeviceTypeId, VendorId } from '@project-chip/matter.js/datatype';
+import { ServerNode, Node } from '@project-chip/matter.js/node';
+import { Environment } from '@project-chip/matter.js/environment';
 
 export type EndpointOptions = {
   zwaveEndpoint?: string;
@@ -60,59 +61,48 @@ export function waitForSigTerm(): Promise<void> {
   });
 }
 
-export type MatterServerOptions = {
-  storagePath?: string;
-};
+export async function withMatterServer(action: (server: ServerNode) => void | Promise<void>) {
+  const environment = Environment.default;
 
-export async function withMatterServer(
-  options: MatterServerOptions,
-  action: (server: MatterServer) => void | Promise<void>
-) {
-  const storagePath = options.storagePath || env.MATTER_BRIDGE_STORAGE_PATH;
-  const mdnsInterface = env.MATTER_BRIDGE_MDNS_INTERFACE;
-  const logLevel = env.ZWAVE2MATTER_LOG_LEVEL || 'info';
-  if (logLevel !== 'debug') {
-    console.debug = () => {};
-  }
-  const storageBackend = storagePath ? new StorageBackendDisk(storagePath) : new StorageBackendMemory();
-  const storageManager = new StorageManager(storageBackend);
-  await storageManager.initialize();
+  const vendorId = environment.vars.number('vendorid') ?? 0xfff1;
+  const productId = environment.vars.number('productid') ?? 0x8333;
+  const passcode = environment.vars.number('passcode');
+  const discriminator = environment.vars.number('discriminator');
 
-  const matterServer = new MatterServer(storageManager, {
-    mdnsInterface: mdnsInterface,
-    mdnsAnnounceInterface: mdnsInterface,
-  });
-
-  try {
-    const actionReturn = action(matterServer);
-    if (actionReturn instanceof Promise) {
-      await actionReturn;
-    }
-  } finally {
-    await matterServer.close();
-  }
-}
-
-export function createCommissioningServer(): CommissioningServer {
-  const vendorId = env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID
-    ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_VENDOR_ID)
-    : 0xfff1;
-  const productId = env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID
-    ? parseInt(env.MATTER_BRIDGE_COMMISSIONING_PRODUCT_ID)
-    : 0x8333;
-
-  return new CommissioningServer({
-    deviceName: 'zwave2matter',
-    deviceType: DeviceTypes.AGGREGATOR.code,
+  const serverNodeConfig: Partial<Node.Configuration<ServerNode.RootEndpoint>> = {
+    id: 'zwave2matter',
+    commissioning: {
+      passcode,
+      discriminator,
+    },
+    productDescription: {
+      name: 'zwave2matter',
+      deviceType: DeviceTypes.AGGREGATOR.code,
+    },
     basicInformation: {
       vendorName: 'zwave2matter',
-      vendorId,
+      vendorId: VendorId(vendorId),
       nodeLabel: 'zwave2matter',
       productName: 'zwave2matter',
       productLabel: 'zwave2matter',
       productId,
-      reachable: true,
       serialNumber: 'zwave2matter',
+      uniqueId: 'zwave2matter',
     },
-  });
+  };
+
+  const server = await ServerNode.create(serverNodeConfig);
+  const logLevel = env.ZWAVE2MATTER_LOG_LEVEL || 'info';
+  if (logLevel !== 'debug') {
+    console.debug = () => {};
+  }
+
+  try {
+    const actionReturn = action(server);
+    if (actionReturn instanceof Promise) {
+      await actionReturn;
+    }
+  } finally {
+    await server.close();
+  }
 }

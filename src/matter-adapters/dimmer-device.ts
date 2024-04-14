@@ -1,4 +1,5 @@
-import { DimmableLightDevice, EndpointOptions } from '@project-chip/matter-node.js/device';
+import { DimmableLightDevice } from '@project-chip/matter.js/devices/DimmableLightDevice';
+import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { ZwaveCommandClass, ZwaveInitialResult, ZwaveInitialValueType } from '../zwave-types';
 import { MatterDeviceAdapter } from '../matter-device-adapter';
 import { ZwaveClient } from '../zwave-client';
@@ -6,8 +7,11 @@ import { BridgedDevice } from '../matter-device-adapter';
 import { ZwaveDevice } from '../zwave-device';
 import { LevelConverter } from '../level-converter';
 
-export class DimmerDeviceAdapter implements MatterDeviceAdapter {
-  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): BridgedDevice | undefined {
+export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDevice> {
+  tryCreateMatterDevice(
+    zwaveClient: ZwaveClient,
+    initialResult: ZwaveInitialResult
+  ): BridgedDevice<DimmableLightDevice> | undefined {
     const currentValueConfig = initialResult.values.find(
       (v) =>
         v.commandClass === ZwaveCommandClass.MultilevelSwitch &&
@@ -33,15 +37,29 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
       watchProperties: ['currentValue'],
     });
 
-    const matterDevice = this.#createDevice(
+    return {
       zwaveDevice,
-      levelConverter,
-      currentValueConfig as ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>
-    );
-    const zwaveOnOff = zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
-    matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {
+      endpointType: DimmableLightDevice,
+      state: {
+        onOff: {
+          onOff: currentValueConfig.value > 0,
+        },
+        levelControl: {
+          currentLevel: levelConverter.toMatterLevel(currentValueConfig.value),
+          options: {
+            executeIfOff: false,
+          },
+        },
+      },
+    };
+  }
+
+  subscribeEvents(endpoint: Endpoint<DimmableLightDevice>, device: BridgedDevice<DimmableLightDevice>) {
+    const zwaveOnOff = device.zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
+
+    endpoint.events.onOff.onOff$Change.on((newValue) => {
       // onOff listener fires when the level is changing, if we are changing from one dimmer level to another, we don't want to do anything here
-      if (newValue && oldValue) {
+      if (newValue && endpoint.state.onOff.onOff) {
         return;
       }
       const zwaveDimmerValue = newValue
@@ -54,6 +72,7 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
         zwaveOnOff.setValue(zwaveDimmerValue);
       }
     });
+    matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {});
     matterDevice.addCurrentLevelListener((newMatterLevel: number, oldMatterLevel: number) => {
       const zwaveLevel = levelConverter.toZwaveLevel(newMatterLevel);
       if (newMatterLevel !== oldMatterLevel && zwaveDevice.property<number>('currentValue') !== zwaveLevel) {
@@ -79,37 +98,5 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter {
         matterDevice.setOnOff(onOff);
       }
     });
-
-    return {
-      name: zwaveDevice.name,
-      device: matterDevice,
-    };
-  }
-
-  #createDevice(
-    zwaveDevice: ZwaveDevice,
-    levelConverter: LevelConverter,
-    initialValue: ZwaveInitialValueType<ZwaveCommandClass.MultilevelSwitch, number>
-  ): DimmableLightDevice {
-    const initialValues = {
-      onOff: initialValue.value > 0,
-    };
-    const deviceOptions: EndpointOptions = {
-      uniqueStorageKey: `zwave-${zwaveDevice.nodeId}`,
-    };
-    return new DimmableLightDevice(
-      initialValues,
-      {
-        minLevel: LevelConverter.MatterMinLevel,
-        maxLevel: LevelConverter.MatterMaxLevel,
-        onLevel: LevelConverter.MatterMaxLevel,
-        currentLevel: levelConverter.toMatterLevel(initialValue.value),
-        options: {
-          executeIfOff: false,
-          coupleColorTempToLevel: false,
-        },
-      },
-      deviceOptions
-    );
   }
 }
