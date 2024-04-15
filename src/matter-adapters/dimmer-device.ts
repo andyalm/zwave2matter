@@ -1,17 +1,16 @@
 import { DimmableLightDevice } from '@project-chip/matter.js/devices/DimmableLightDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { ZwaveCommandClass, ZwaveInitialResult, ZwaveInitialValueType } from '../zwave-types';
-import { MatterDeviceAdapter } from '../matter-device-adapter';
+import { ZwaveCommandClass, ZwaveInitialResult } from '../zwave-types';
 import { ZwaveClient } from '../zwave-client';
-import { BridgedDevice } from '../matter-device-adapter';
 import { ZwaveDevice } from '../zwave-device';
 import { LevelConverter } from '../level-converter';
+import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../matter-device-adapter';
 
-export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDevice> {
-  tryCreateMatterDevice(
+export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevice> {
+  static tryCreateMatterDevice(
     zwaveClient: ZwaveClient,
     initialResult: ZwaveInitialResult
-  ): BridgedDevice<DimmableLightDevice> | undefined {
+  ): ZwaveMatterDevice<DimmableLightDevice> | undefined {
     const currentValueConfig = initialResult.values.find(
       (v) =>
         v.commandClass === ZwaveCommandClass.MultilevelSwitch &&
@@ -37,25 +36,35 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDev
       watchProperties: ['currentValue'],
     });
 
+    return new DimmerDeviceAdapter(zwaveDevice, levelConverter);
+  }
+
+  readonly levelConverter: LevelConverter;
+
+  constructor(zwaveDevice: ZwaveDevice, levelConverter: LevelConverter) {
+    super(zwaveDevice, DimmableLightDevice);
+
+    this.levelConverter = levelConverter;
+  }
+
+  getCurrentState(): Endpoint.Options<DimmableLightDevice> {
+    const zwaveDimmerValue = this.zwaveDevice.property<number>('currentValue') ?? 0;
+
     return {
-      zwaveDevice,
-      endpointType: DimmableLightDevice,
-      state: {
-        onOff: {
-          onOff: currentValueConfig.value > 0,
-        },
-        levelControl: {
-          currentLevel: levelConverter.toMatterLevel(currentValueConfig.value),
-          options: {
-            executeIfOff: false,
-          },
+      onOff: {
+        onOff: zwaveDimmerValue > 0,
+      },
+      levelControl: {
+        currentLevel: this.levelConverter.toMatterLevel(zwaveDimmerValue),
+        options: {
+          executeIfOff: false,
         },
       },
     };
   }
 
-  subscribeEvents(endpoint: Endpoint<DimmableLightDevice>, device: BridgedDevice<DimmableLightDevice>) {
-    const zwaveOnOff = device.zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
+  subscribeEvents(endpoint: Endpoint<DimmableLightDevice>) {
+    const zwaveOnOff = this.zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
 
     endpoint.events.onOff.onOff$Change.on((newValue) => {
       // onOff listener fires when the level is changing, if we are changing from one dimmer level to another, we don't want to do anything here
@@ -63,39 +72,43 @@ export class DimmerDeviceAdapter implements MatterDeviceAdapter<DimmableLightDev
         return;
       }
       const zwaveDimmerValue = newValue
-        ? levelConverter.toZwaveLevel(matterDevice.getCurrentLevel()) || currentValueConfig.metadata.max
-        : currentValueConfig.metadata.min;
-      if (zwaveDevice.property<number>('currentValue') !== zwaveDimmerValue) {
+        ? this.levelConverter.toZwaveLevel(
+            endpoint.state.levelControl.currentLevel ?? this.levelConverter.matterMaxLevel
+          )
+        : this.levelConverter.zwaveMinLevel;
+      if (this.zwaveDevice.property<number>('currentValue') !== zwaveDimmerValue) {
         console.log(
-          `[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff state requested to change to '${newValue}' (zwave dimmer value: ${zwaveDimmerValue})`
+          `[MatterDevice] Name='${this.zwaveDevice.name}', NodeId='${this.zwaveDevice.nodeId}' onOff state requested to change to '${newValue}' (zwave dimmer value: ${zwaveDimmerValue})`
         );
         zwaveOnOff.setValue(zwaveDimmerValue);
       }
     });
-    matterDevice.addOnOffListener((newValue: boolean, oldValue: boolean) => {});
-    matterDevice.addCurrentLevelListener((newMatterLevel: number, oldMatterLevel: number) => {
-      const zwaveLevel = levelConverter.toZwaveLevel(newMatterLevel);
-      if (newMatterLevel !== oldMatterLevel && zwaveDevice.property<number>('currentValue') !== zwaveLevel) {
+    endpoint.events.levelControl.currentLevel$Change.on((newMatterLevel) => {
+      newMatterLevel ??= 0;
+      const zwaveLevel = this.levelConverter.toZwaveLevel(newMatterLevel);
+      if (this.zwaveDevice.property<number>('currentValue') !== zwaveLevel) {
         console.log(
-          `[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' currentLevel state requested to change to matterLevel='${newMatterLevel}', zwaveLevel='${zwaveLevel}'`
+          `[MatterDevice] Name='${this.zwaveDevice.name}', NodeId='${this.zwaveDevice.nodeId}' currentLevel state requested to change to matterLevel='${newMatterLevel}', zwaveLevel='${zwaveLevel}'`
         );
         zwaveOnOff.setValue(zwaveLevel);
       }
     });
     zwaveOnOff.addChangeListener((newZwaveValue: number) => {
-      const matterLevel = levelConverter.toMatterLevel(newZwaveValue);
+      const matterLevel = this.levelConverter.toMatterLevel(newZwaveValue);
       const onOff = matterLevel !== LevelConverter.MatterMinLevel;
-      if (matterDevice.getCurrentLevel() !== matterLevel) {
-        console.log(
-          `[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' currentLevel is ${matterDevice.getCurrentLevel()}, new matterLevel='${matterLevel}', zwaveLevel='${newZwaveValue}'`
+      if (endpoint.state.levelControl.currentLevel !== matterLevel || endpoint.state.onOff.onOff !== onOff) {
+        this.setMatterValues(
+          endpoint,
+          {
+            levelControl: {
+              currentLevel: matterLevel,
+            },
+            onOff: {
+              onOff,
+            },
+          },
+          `onOff->${onOff},currentLevel->${matterLevel}`
         );
-        matterDevice.setCurrentLevel(matterLevel);
-      }
-      if (matterDevice.getOnOff() !== onOff) {
-        console.log(
-          `[MatterDevice] Name='${matterDevice.name}', NodeId='${zwaveDevice.nodeId}' onOff is ${matterDevice.getOnOff()}, new onOff='${onOff}'`
-        );
-        matterDevice.setOnOff(onOff);
       }
     });
   }

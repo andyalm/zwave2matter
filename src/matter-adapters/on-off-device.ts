@@ -54,15 +54,16 @@ export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> 
         zwaveOnOff.setValue(newValue);
       }
     });
-    zwaveOnOff.addChangeListener(async (newValue: boolean) => {
-      console.log(
-        `[ZwaveEvent.currentValue$Change(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] onOff->'${newValue}'`
-      );
-      await endpoint.set({
-        onOff: {
-          onOff: newValue,
+    zwaveOnOff.addChangeListener((newValue: boolean) => {
+      this.setMatterValues(
+        endpoint,
+        {
+          onOff: {
+            onOff: newValue,
+          },
         },
-      });
+        `onOff->${newValue}`
+      );
     });
   }
 
