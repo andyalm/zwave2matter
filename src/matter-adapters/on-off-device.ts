@@ -46,10 +46,10 @@ export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> 
 
   subscribeEvents(endpoint: Endpoint<OnOffDeviceTypes>) {
     const zwaveOnOff = this.zwaveDevice.createPropertyManager<boolean>('currentValue', 'targetValue');
-    endpoint.events.onOff.onOff$Change.on((newValue) => {
+    endpoint.events.onOff.onOff$Changed.on((newValue) => {
       if (this.zwaveDevice.property<boolean>('currentValue') !== newValue) {
         console.log(
-          `[MatterEvent.onOff$Change(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] onOff->'${newValue}'`
+          `[MatterEvent.onOff$Changed(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] onOff->'${newValue}'`
         );
         zwaveOnOff.setValue(newValue);
       }
