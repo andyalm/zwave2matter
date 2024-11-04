@@ -1,8 +1,7 @@
-import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
-import { OnOffPlugInUnitDevice } from '@project-chip/matter.js/devices/OnOffPlugInUnitDevice';
-import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { ZwaveCommandClass, ZwaveInitialResult } from '../zwave-types';
-import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../matter-device-adapter';
+import { OnOffPlugInUnitDevice, OnOffLightDevice } from '@matter/main/devices';
+import { Endpoint, EndpointType } from '@matter/main';
+import { ZwaveCommandClass, ZwaveEndpointData, ZwaveInitialResult } from '../zwave-types';
+import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../zwave-matter-device';
 import { ZwaveClient } from '../zwave-client';
 import { ZwaveDevice } from '../zwave-device';
 
@@ -11,17 +10,17 @@ type OnOffDeviceTypes = OnOffLightDevice | OnOffPlugInUnitDevice;
 export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> {
   static tryCreateMatterDevice(
     zwaveClient: ZwaveClient,
-    initialResult: ZwaveInitialResult
+    zwaveEndpoint: ZwaveEndpointData
   ): ZwaveMatterDevice<OnOffDeviceTypes> | undefined {
     if (
-      !initialResult.values.find(
+      !zwaveEndpoint.values.find(
         (v) => v.commandClass === ZwaveCommandClass.BinarySwitch && v.property === 'currentValue'
       )
     ) {
       return;
     }
 
-    const zwaveDevice = new ZwaveDevice(zwaveClient, initialResult, {
+    const zwaveDevice = new ZwaveDevice(zwaveClient, zwaveEndpoint, {
       commandClass: ZwaveCommandClass.BinarySwitch,
       watchProperties: ['currentValue'],
     });
@@ -31,7 +30,7 @@ export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> 
       return;
     }
 
-    const matterDeviceType = this.#getDeviceType(zwaveDevice);
+    const matterDeviceType: OnOffDeviceTypes = this.#getDeviceType(zwaveDevice);
 
     return new OnOffDeviceAdapter(zwaveDevice, matterDeviceType);
   }
@@ -67,7 +66,7 @@ export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> 
     });
   }
 
-  static #getDeviceType(zwaveDevice: ZwaveDevice): OnOffLightDevice | OnOffPlugInUnitDevice {
+  static #getDeviceType(zwaveDevice: ZwaveDevice): OnOffDeviceTypes {
     if (zwaveDevice.name.toLowerCase().includes('light')) {
       return OnOffLightDevice;
     } else {

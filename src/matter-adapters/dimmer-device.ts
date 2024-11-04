@@ -1,17 +1,17 @@
-import { DimmableLightDevice } from '@project-chip/matter.js/devices/DimmableLightDevice';
-import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { ZwaveCommandClass, ZwaveInitialResult } from '../zwave-types';
+import { DimmableLightDevice } from '@matter/main/devices';
+import { Endpoint } from '@matter/main';
+import { ZwaveCommandClass, ZwaveEndpointData } from '../zwave-types';
 import { ZwaveClient } from '../zwave-client';
 import { ZwaveDevice } from '../zwave-device';
 import { LevelConverter } from '../level-converter';
-import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../matter-device-adapter';
+import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../zwave-matter-device';
 
 export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevice> {
   static tryCreateMatterDevice(
     zwaveClient: ZwaveClient,
-    initialResult: ZwaveInitialResult
+    zwaveEndpoint: ZwaveEndpointData
   ): ZwaveMatterDevice<DimmableLightDevice> | undefined {
-    const currentValueConfig = initialResult.values.find(
+    const currentValueConfig = zwaveEndpoint.values.find(
       (v) =>
         v.commandClass === ZwaveCommandClass.MultilevelSwitch &&
         v.property === 'currentValue' &&
@@ -24,14 +24,14 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
 
     if (typeof currentValueConfig.metadata.min !== 'number' || typeof currentValueConfig.metadata.max !== 'number') {
       console.error(
-        `[ERROR] Zwave NodeId='${initialResult.nodeId}' is a multiswitch dimmer but min/max values are not defined in metadata. Skipping...`
+        `[ERROR] Zwave NodeId='${zwaveEndpoint.nodeId}' is a multiswitch dimmer but min/max values are not defined in metadata. Skipping...`
       );
       return;
     }
 
     const levelConverter = new LevelConverter(currentValueConfig.metadata.min, currentValueConfig.metadata.max);
 
-    const zwaveDevice = new ZwaveDevice(zwaveClient, initialResult, {
+    const zwaveDevice = new ZwaveDevice(zwaveClient, zwaveEndpoint, {
       commandClass: ZwaveCommandClass.MultilevelSwitch,
       watchProperties: ['currentValue'],
     });

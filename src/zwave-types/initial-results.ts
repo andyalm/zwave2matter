@@ -63,3 +63,30 @@ export type ZwaveInitialResult<TCommandClass extends ZwaveCommandClass = ZwaveCo
   ];
   values: ZwaveInitialValueType<TCommandClass, TValue>[];
 };
+
+export type ZwaveEndpointData<TCommandClass extends ZwaveCommandClass = ZwaveCommandClass, TValue = any> = {
+  index: number;
+  nodeId: number;
+  name: string;
+  commandClasses: [
+    {
+      id: TCommandClass;
+      name: string;
+      version: number;
+      isSecure: boolean;
+    },
+  ];
+  values: ZwaveInitialValueType<TCommandClass, TValue>[];
+};
+
+export function getZwaveEndpoints<TCommandClass extends ZwaveCommandClass, TValue>(
+  initialResult: ZwaveInitialResult<TCommandClass, TValue>
+): ZwaveEndpointData<TCommandClass, TValue>[] {
+  return initialResult.endpoints.map((endpoint) => ({
+    index: endpoint.index,
+    nodeId: endpoint.nodeId,
+    name: `${initialResult.name} ${endpoint.index}`,
+    commandClasses: endpoint.commandClasses,
+    values: initialResult.values.filter((v) => v.endpoint === endpoint.index),
+  }));
+}

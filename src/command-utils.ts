@@ -2,10 +2,8 @@ import { env } from 'process';
 import { ZwaveClient } from './zwave-client';
 import { Command } from 'commander';
 import { ZwaveInitialResult } from './zwave-types';
-import { DeviceTypes } from '@project-chip/matter-node.js/device';
-import { DeviceTypeId, VendorId } from '@project-chip/matter.js/datatype';
-import { ServerNode, Node } from '@project-chip/matter.js/node';
-import { Environment } from '@project-chip/matter.js/environment';
+import { Environment, ServerNode, Node, VendorId, Endpoint } from '@matter/main';
+import { AggregatorEndpoint } from '@matter/main/endpoints';
 
 export type EndpointOptions = {
   zwaveEndpoint?: string;
@@ -77,7 +75,7 @@ export async function withMatterServer(action: (server: ServerNode) => void | Pr
     },
     productDescription: {
       name: 'zwave2matter',
-      deviceType: DeviceTypes.AGGREGATOR.code,
+      deviceType: AggregatorEndpoint.deviceType,
     },
     basicInformation: {
       vendorName: 'zwave2matter',

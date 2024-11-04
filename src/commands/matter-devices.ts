@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { ZwaveClient } from '../zwave-client';
 import { addZwaveOptions, withZwaveClient } from '../command-utils';
-import { tryCreateMatterDevice } from '../matter-device-adapter';
+import { tryCreateMatterDevices } from '../matter-device-adapter';
 import { ZwaveInitialResult } from '../zwave-types';
 
 export function matterDevices(program: Command) {
@@ -15,16 +15,18 @@ export function matterDevices(program: Command) {
       await withZwaveClient(options, async (client: ZwaveClient, initialState: ZwaveInitialResult[]) => {
         const devices: any[] = [];
         for (const initialResult of initialState) {
-          const matterResult = tryCreateMatterDevice(client, initialResult);
-          if (matterResult) {
-            devices.push({
-              nodeId: matterResult.device.nodeId,
-              name: matterResult.device.name,
-              endpointType: {
-                deviceType: matterResult.device.endpointType.deviceType,
-                deviceClasses: matterResult.device.endpointType.deviceClass,
-              },
-            });
+          const matterResults = tryCreateMatterDevices(client, initialResult);
+          if (matterResults) {
+            for (const matterResult of matterResults) {
+              devices.push({
+                nodeId: matterResult.nodeId,
+                name: matterResult.name,
+                endpointType: {
+                  deviceType: matterResult.endpointType.deviceType,
+                  deviceClasses: matterResult.endpointType.deviceClass,
+                },
+              });
+            }
           }
         }
         console.log(JSON.stringify(devices, null, 2));

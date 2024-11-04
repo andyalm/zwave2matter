@@ -1,5 +1,5 @@
 import { ZwaveClient } from './zwave-client';
-import { ZwaveCommandClass, ZwaveInitialResult } from './zwave-types';
+import { ZwaveCommandClass, ZwaveEndpointData, ZwaveInitialResult } from './zwave-types';
 import { NodeEvent } from './zwave-types/messages/outgoing-message';
 import { ZwavePropertyManager } from './zwave-property-manager';
 
@@ -18,21 +18,22 @@ export class ZwaveDevice {
   readonly #propertyValues: Record<string, any> = {};
   readonly #propertyChangeCallbacks: Record<string, PropertyChangedCallback[]> = {};
 
-  constructor(client: ZwaveClient, initialResult: ZwaveInitialResult, options: ZwaveDeviceOptions) {
+  constructor(client: ZwaveClient, endpoint: ZwaveEndpointData, options: ZwaveDeviceOptions) {
     this.#client = client;
-    this.#nodeId = initialResult.nodeId;
-    this.#name = initialResult.name;
+    this.#nodeId = endpoint.nodeId;
+    this.#name = endpoint.name;
     this.#commandClass = options.commandClass;
     options.watchProperties.forEach((propertyName) => {
-      this.#propertyValues[propertyName] = initialResult.values.find((v) => v.property === propertyName)?.value;
+      this.#propertyValues[propertyName] = endpoint.values.find((v) => v.property === propertyName)?.value;
     });
     client.subscribeEvents<NodeEvent>(
       (event) =>
         event.source === 'node' &&
-        event.nodeId === initialResult.nodeId &&
+        event.nodeId === endpoint.nodeId &&
+        event.args.endpoint === endpoint.index &&
         event.args?.commandClass === options.commandClass &&
         event.args?.property &&
-        options.watchProperties.includes(event.args?.property)
+        options.watchProperties.includes(event.args.property)
           ? event
           : undefined,
       (event) => {

@@ -1,76 +1,30 @@
-import { ZwaveInitialResult } from './zwave-types';
+import { EndpointType, MutableEndpoint } from '@matter/main';
+import { getZwaveEndpoints, ZwaveEndpointData, ZwaveInitialResult } from './zwave-types';
 import { OnOffDeviceAdapter } from './matter-adapters';
 import { ZwaveClient } from './zwave-client';
 import { DimmerDeviceAdapter } from './matter-adapters/dimmer-device';
-import { MutableEndpoint, EndpointType } from '@project-chip/matter.js/endpoint/type';
-import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { ZwaveDevice } from './zwave-device';
-import { SupportedBehaviors } from '@project-chip/matter.js/endpoint/properties';
+import { ZwaveMatterDevice } from './zwave-matter-device';
+
+type MatterDeviceEndpointType = EndpointType & MutableEndpoint;
 
 export interface ZwaveMatterAdapter {
-  tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult): ZwaveMatterDevice | undefined;
+  tryCreateMatterDevices(
+    zwaveClient: ZwaveClient,
+    zwaveEndpoint: ZwaveEndpointData
+  ): ZwaveMatterDevice<MatterDeviceEndpointType>[] | undefined;
 }
 
 const adapters: ZwaveMatterAdapter[] = [OnOffDeviceAdapter, DimmerDeviceAdapter];
 
-export function tryCreateMatterDevice(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult) {
-  for (const adapter of adapters) {
-    const device = adapter.tryCreateMatterDevice(zwaveClient, initialResult);
-    if (device) {
-      return device;
+export function tryCreateMatterDevices(zwaveClient: ZwaveClient, initialResult: ZwaveInitialResult) {
+  for (const zwaveEndpoint of getZwaveEndpoints(initialResult)) {
+    for (const adapter of adapters) {
+      const devices = adapter.tryCreateMatterDevices(zwaveClient, zwaveEndpoint);
+      if (devices) {
+        return devices;
+      }
     }
   }
 
   return;
-}
-
-export interface ZwaveMatterDevice<TEndpointType extends EndpointType = EndpointType> {
-  readonly nodeId: number;
-  readonly name: string;
-  readonly endpointType: MutableEndpoint;
-  readonly reachable?: boolean;
-
-  getCurrentState(): Endpoint.Options<TEndpointType>;
-  subscribeEvents(endpoint: Endpoint<TEndpointType>): void;
-}
-
-export abstract class ZwaveMatterDeviceBase<TEndpointType extends EndpointType & MutableEndpoint>
-  implements ZwaveMatterDevice<TEndpointType>
-{
-  readonly zwaveDevice: ZwaveDevice;
-  readonly endpointType: TEndpointType;
-
-  constructor(zwaveDevice: ZwaveDevice, endpointType: TEndpointType) {
-    this.zwaveDevice = zwaveDevice;
-    this.endpointType = endpointType;
-  }
-
-  get nodeId() {
-    return this.zwaveDevice.nodeId;
-  }
-
-  get name() {
-    return this.zwaveDevice.name;
-  }
-
-  abstract getCurrentState(): Endpoint.Options<TEndpointType>;
-
-  abstract subscribeEvents(endpoint: Endpoint<TEndpointType>): void;
-
-  protected setMatterValues(
-    endpoint: Endpoint<TEndpointType>,
-    values: SupportedBehaviors.StatePatchOf<TEndpointType['behaviors']>,
-    logSummary?: string
-  ): void {
-    endpoint
-      .set(values)
-      .then(() => {
-        console.info(`[MatterEndpoint.set(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] ${logSummary}`);
-      })
-      .catch((reason) => {
-        console.error(
-          `[ERROR] [MatterEndpoint.set(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] ${logSummary}: ${reason}`
-        );
-      });
-  }
 }
