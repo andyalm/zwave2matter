@@ -83,7 +83,7 @@ export function getZwaveEndpoints<TCommandClass extends ZwaveCommandClass, TValu
   initialResults: ZwaveInitialResult<TCommandClass, TValue>[]
 ): ZwaveEndpointData<TCommandClass, TValue>[] {
   return initialResults.flatMap((initialResult) =>
-    initialResult.endpoints.map((endpoint) => ({
+    (initialResult.endpoints ?? []).map((endpoint) => ({
       index: endpoint.index,
       nodeId: endpoint.nodeId,
       name: initialResult.name,

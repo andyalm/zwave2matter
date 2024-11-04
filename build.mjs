@@ -7,4 +7,5 @@ await esbuild.build({
   platform: 'node',
   plugins: [],
   outfile: 'dist/zwave2matter.js',
+  sourcemap: true,
 });
