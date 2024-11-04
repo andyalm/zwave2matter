@@ -5,7 +5,8 @@ await esbuild.build({
   entryPoints: ['src/index.ts'],
   bundle: true,
   platform: 'node',
-  plugins: [],
+  conditions: ['node'],
+  plugins: [typecheckPlugin()],
   outfile: 'dist/zwave2matter.js',
   sourcemap: true,
 });
