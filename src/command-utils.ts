@@ -1,8 +1,8 @@
 import { env } from 'process';
 import { ZwaveClient } from './zwave-client';
 import { Command } from 'commander';
-import { ZwaveInitialResult } from './zwave-types';
-import { Environment, ServerNode, Node, VendorId, Endpoint } from '@matter/main';
+import { getZwaveEndpoints, ZwaveEndpointData } from './zwave-types';
+import { Environment, ServerNode, Node, VendorId } from '@matter/main';
 import { AggregatorEndpoint } from '@matter/main/endpoints';
 
 export type EndpointOptions = {
@@ -32,7 +32,7 @@ export function zwaveClient(options: EndpointOptions) {
   return new ZwaveClient(endpoint);
 }
 
-type ZwaveClientAction = (client: ZwaveClient, initialState: ZwaveInitialResult[]) => void | Promise<void>;
+type ZwaveClientAction = (client: ZwaveClient, zwaveEndpoints: ZwaveEndpointData[]) => void | Promise<void>;
 
 export async function withZwaveClient(options: EndpointOptions, action: ZwaveClientAction) {
   const client = zwaveClient(options);
@@ -42,8 +42,9 @@ export async function withZwaveClient(options: EndpointOptions, action: ZwaveCli
 
     initialState = initialState.filter((s) => s.name?.includes(filter));
   }
+  const zwaveEndpoints = getZwaveEndpoints(initialState);
   try {
-    const actionReturn = action(client, initialState);
+    const actionReturn = action(client, zwaveEndpoints);
     if (actionReturn instanceof Promise) {
       await actionReturn;
     }

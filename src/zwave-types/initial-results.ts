@@ -80,13 +80,15 @@ export type ZwaveEndpointData<TCommandClass extends ZwaveCommandClass = ZwaveCom
 };
 
 export function getZwaveEndpoints<TCommandClass extends ZwaveCommandClass, TValue>(
-  initialResult: ZwaveInitialResult<TCommandClass, TValue>
+  initialResults: ZwaveInitialResult<TCommandClass, TValue>[]
 ): ZwaveEndpointData<TCommandClass, TValue>[] {
-  return initialResult.endpoints.map((endpoint) => ({
-    index: endpoint.index,
-    nodeId: endpoint.nodeId,
-    name: `${initialResult.name} ${endpoint.index}`,
-    commandClasses: endpoint.commandClasses,
-    values: initialResult.values.filter((v) => v.endpoint === endpoint.index),
-  }));
+  return initialResults.flatMap((initialResult) =>
+    initialResult.endpoints.map((endpoint) => ({
+      index: endpoint.index,
+      nodeId: endpoint.nodeId,
+      name: initialResult.name,
+      commandClasses: endpoint.commandClasses,
+      values: initialResult.values.filter((v) => v.endpoint === endpoint.index),
+    }))
+  );
 }

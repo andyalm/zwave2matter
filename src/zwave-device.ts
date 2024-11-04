@@ -1,5 +1,5 @@
 import { ZwaveClient } from './zwave-client';
-import { ZwaveCommandClass, ZwaveEndpointData, ZwaveInitialResult } from './zwave-types';
+import { ZwaveCommandClass, ZwaveEndpointData } from './zwave-types';
 import { NodeEvent } from './zwave-types/messages/outgoing-message';
 import { ZwavePropertyManager } from './zwave-property-manager';
 
@@ -13,6 +13,7 @@ export type PropertyChangedCallback<TValue = any> = (newValue: TValue) => void;
 export class ZwaveDevice {
   readonly #client: ZwaveClient;
   readonly #nodeId: number;
+  readonly #endpointId: number;
   readonly #name: string;
   readonly #commandClass: ZwaveCommandClass;
   readonly #propertyValues: Record<string, any> = {};
@@ -21,6 +22,7 @@ export class ZwaveDevice {
   constructor(client: ZwaveClient, endpoint: ZwaveEndpointData, options: ZwaveDeviceOptions) {
     this.#client = client;
     this.#nodeId = endpoint.nodeId;
+    this.#endpointId = endpoint.index;
     this.#name = endpoint.name;
     this.#commandClass = options.commandClass;
     options.watchProperties.forEach((propertyName) => {
@@ -53,6 +55,10 @@ export class ZwaveDevice {
 
   get nodeId() {
     return this.#nodeId;
+  }
+
+  get endpointId() {
+    return this.#endpointId;
   }
 
   get name() {

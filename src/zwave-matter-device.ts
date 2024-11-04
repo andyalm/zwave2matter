@@ -2,7 +2,9 @@ import { Endpoint, EndpointType, SupportedBehaviors } from '@matter/main';
 import { ZwaveDevice } from './zwave-device';
 
 export interface ZwaveMatterDevice<TEndpointType extends EndpointType> {
+  readonly uniqueId: string;
   readonly nodeId: number;
+  readonly endpointId: number;
   readonly name: string;
   readonly endpointType: TEndpointType;
   readonly reachable?: boolean;
@@ -20,6 +22,14 @@ export abstract class ZwaveMatterDeviceBase<TEndpointType extends EndpointType>
   constructor(zwaveDevice: ZwaveDevice, endpointType: TEndpointType) {
     this.zwaveDevice = zwaveDevice;
     this.endpointType = endpointType;
+  }
+
+  get uniqueId(): string {
+    return `${this.nodeId}.${this.endpointId}`;
+  }
+
+  get endpointId(): number {
+    return this.zwaveDevice.endpointId;
   }
 
   get nodeId() {
@@ -42,11 +52,13 @@ export abstract class ZwaveMatterDeviceBase<TEndpointType extends EndpointType>
     endpoint
       .set(values)
       .then(() => {
-        console.info(`[MatterEndpoint.set(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] ${logSummary}`);
+        console.info(
+          `[MatterEndpoint.set(${this.zwaveDevice.nodeId}[${this.zwaveDevice.endpointId}].${this.zwaveDevice.name})] ${logSummary}`
+        );
       })
       .catch((reason) => {
         console.error(
-          `[ERROR] [MatterEndpoint.set(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] ${logSummary}: ${reason}`
+          `[ERROR] [MatterEndpoint.set(${this.zwaveDevice.nodeId}[${this.zwaveDevice.endpointId}].${this.zwaveDevice.name})] ${logSummary}: ${reason}`
         );
       });
   }
