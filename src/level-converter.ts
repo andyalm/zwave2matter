@@ -15,7 +15,7 @@ export class LevelConverter {
   }
 
   get matterMaxLevel() {
-    return LevelConverter.MatterMinLevel;
+    return LevelConverter.MatterMaxLevel;
   }
 
   toMatterLevel(zwaveLevel: number): number {
