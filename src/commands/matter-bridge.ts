@@ -25,7 +25,7 @@ export function matterBridge(program: Command) {
                   matterDevice.endpointType.with(BridgedDeviceBasicInformationServer),
                   {
                     id: matterDevice.uniqueId,
-                    bridgedDeviceInformation: {
+                    bridgedDeviceBasicInformation: {
                       nodeLabel: matterDevice.name,
                       productName: matterDevice.name,
                       productLabel: matterDevice.name,
