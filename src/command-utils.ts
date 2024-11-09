@@ -63,13 +63,14 @@ export function waitForSigTerm(): Promise<void> {
 export async function withMatterServer(action: (server: ServerNode) => void | Promise<void>) {
   const environment = Environment.default;
 
+  const uniqueId = environment.vars.string('uniqueid') ?? 'zwave2matter-development';
   const vendorId = environment.vars.number('vendorid') ?? 0xfff1;
   const productId = environment.vars.number('productid') ?? 0x8333;
-  const passcode = environment.vars.number('passcode');
-  const discriminator = environment.vars.number('discriminator');
+  const passcode = environment.vars.number('passcode') ?? 12345679;
+  const discriminator = environment.vars.number('discriminator') ?? 3210;
 
   const serverNodeConfig: Partial<Node.Configuration<ServerNode.RootEndpoint>> = {
-    id: 'zwave2matter',
+    id: uniqueId,
     commissioning: {
       passcode,
       discriminator,
@@ -85,8 +86,8 @@ export async function withMatterServer(action: (server: ServerNode) => void | Pr
       productName: 'zwave2matter',
       productLabel: 'zwave2matter',
       productId,
-      serialNumber: 'zwave2matter',
-      uniqueId: 'zwave2matter',
+      serialNumber: `${uniqueId}-serial`,
+      uniqueId: uniqueId,
     },
   };
 

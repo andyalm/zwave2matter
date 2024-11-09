@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { addZwaveOptions, waitForSigTerm, withMatterServer, withZwaveClient } from '../command-utils';
+import { addZwaveOptions, withMatterServer, withZwaveClient } from '../command-utils';
 import { ZwaveClient } from '../zwave-client';
 import { ZwaveEndpointData } from '../zwave-types';
 import { tryCreateMatterDevice } from '../matter-device-adapter';
@@ -41,8 +41,7 @@ export function matterBridge(program: Command) {
               }
             }
 
-            await matterServer.start();
-            await waitForSigTerm();
+            await matterServer.run();
           });
         });
       })

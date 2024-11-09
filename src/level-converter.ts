@@ -1,5 +1,5 @@
 export class LevelConverter {
-  static readonly MatterMinLevel = 0;
+  static readonly MatterMinLevel = 1;
   static readonly MatterMaxLevel = 254;
 
   readonly zwaveMinLevel: number;

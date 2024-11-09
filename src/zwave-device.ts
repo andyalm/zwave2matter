@@ -32,7 +32,7 @@ export class ZwaveDevice {
       (event) =>
         event.source === 'node' &&
         event.nodeId === endpoint.nodeId &&
-        event.args.endpoint === endpoint.index &&
+        event.args?.endpoint === endpoint.index &&
         event.args?.commandClass === options.commandClass &&
         event.args?.property &&
         options.watchProperties.includes(event.args.property)

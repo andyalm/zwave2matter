@@ -25,7 +25,7 @@ export abstract class ZwaveMatterDeviceBase<TEndpointType extends EndpointType>
   }
 
   get uniqueId(): string {
-    return `${this.nodeId}.${this.endpointId}`;
+    return `${this.nodeId}-${this.endpointId}`;
   }
 
   get endpointId(): number {
