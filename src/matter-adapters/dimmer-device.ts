@@ -68,7 +68,9 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
 
     endpoint.events.onOff.onOff$Changed.on((newValue) => {
       const zwaveDimmerValue = newValue
-        ? this.levelConverter.toZwaveLevel(this.levelConverter.matterMaxLevel)
+        ? this.levelConverter.toZwaveLevel(
+            endpoint.state.levelControl.currentLevel ?? this.levelConverter.matterMaxLevel
+          )
         : this.levelConverter.zwaveMinLevel;
       if (this.zwaveDevice.property<number>('currentValue') !== zwaveDimmerValue) {
         console.log(
