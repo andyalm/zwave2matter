@@ -1,6 +1,6 @@
 import { OnOffPlugInUnitDevice, OnOffLightDevice } from '@matter/main/devices';
-import { Endpoint, EndpointType } from '@matter/main';
-import { ZwaveCommandClass, ZwaveEndpointData, ZwaveInitialResult } from '../zwave-types';
+import { Endpoint } from '@matter/main';
+import { ZwaveCommandClass, ZwaveEndpointData } from '../zwave-types';
 import { ZwaveMatterDevice, ZwaveMatterDeviceBase } from '../zwave-matter-device';
 import { ZwaveClient } from '../zwave-client';
 import { ZwaveDevice } from '../zwave-device';
@@ -54,15 +54,17 @@ export class OnOffDeviceAdapter extends ZwaveMatterDeviceBase<OnOffDeviceTypes> 
       }
     });
     zwaveOnOff.addChangeListener((newValue: boolean) => {
-      this.setMatterValues(
-        endpoint,
-        {
-          onOff: {
-            onOff: newValue,
+      if (newValue !== endpoint.state.onOff.onOff) {
+        this.setMatterValues(
+          endpoint,
+          {
+            onOff: {
+              onOff: newValue,
+            },
           },
-        },
-        `onOff->${newValue}`
-      );
+          `onOff->${newValue}`
+        );
+      }
     });
   }
 

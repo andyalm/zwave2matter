@@ -52,7 +52,7 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
 
     return {
       onOff: {
-        onOff: zwaveDimmerValue > 0,
+        onOff: zwaveDimmerValue > this.levelConverter.zwaveMinLevel,
       },
       levelControl: {
         currentLevel: this.levelConverter.toMatterLevel(zwaveDimmerValue),
@@ -67,10 +67,6 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
     const zwaveOnOff = this.zwaveDevice.createPropertyManager<number>('currentValue', 'targetValue');
 
     endpoint.events.onOff.onOff$Changed.on((newValue) => {
-      // onOff listener fires when the level is changing, if we are changing from one dimmer level to another, we don't want to do anything here
-      // if (newValue && endpoint.state.onOff.onOff) {
-      //   return;
-      // }
       const zwaveDimmerValue = newValue
         ? this.levelConverter.toZwaveLevel(this.levelConverter.matterMaxLevel)
         : this.levelConverter.zwaveMinLevel;
@@ -82,19 +78,33 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
       }
     });
     endpoint.events.levelControl.currentLevel$Changed.on((newMatterLevel) => {
-      newMatterLevel ??= 0;
-      const zwaveLevel = this.levelConverter.toZwaveLevel(newMatterLevel);
-      if (this.zwaveDevice.property<number>('currentValue') !== zwaveLevel) {
-        console.log(
-          `[MatterEvent.currentLevel$Changed(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] mLevel->${newMatterLevel},zLevel->${zwaveLevel}`
-        );
-        zwaveOnOff.setValue(zwaveLevel);
+      if (newMatterLevel) {
+        const zwaveLevel = this.levelConverter.toZwaveLevel(newMatterLevel);
+        if (this.zwaveDevice.property<number>('currentValue') !== zwaveLevel) {
+          console.log(
+            `[MatterEvent.currentLevel$Changed(${this.zwaveDevice.nodeId}.${this.zwaveDevice.name})] mLevel->${newMatterLevel},zLevel->${zwaveLevel}`
+          );
+          zwaveOnOff.setValue(zwaveLevel);
+        }
       }
     });
     zwaveOnOff.addChangeListener((newZwaveValue: number) => {
       const matterLevel = this.levelConverter.toMatterLevel(newZwaveValue);
-      const onOff = matterLevel !== LevelConverter.MatterMinLevel;
-      if (endpoint.state.levelControl.currentLevel !== matterLevel || endpoint.state.onOff.onOff !== onOff) {
+      const isOff = newZwaveValue === 0;
+
+      if (isOff) {
+        if (endpoint.state.onOff.onOff) {
+          this.setMatterValues(
+            endpoint,
+            {
+              onOff: {
+                onOff: false,
+              },
+            },
+            `onOff->false,zLevel->${newZwaveValue}`
+          );
+        }
+      } else if (endpoint.state.levelControl.currentLevel !== matterLevel || !endpoint.state.onOff.onOff) {
         this.setMatterValues(
           endpoint,
           {
@@ -102,10 +112,10 @@ export class DimmerDeviceAdapter extends ZwaveMatterDeviceBase<DimmableLightDevi
               currentLevel: matterLevel,
             },
             onOff: {
-              onOff,
+              onOff: true,
             },
           },
-          `onOff->${onOff},mLevel->${matterLevel},zLevel->${newZwaveValue}`
+          `onOff->true,mLevel->${matterLevel},zLevel->${newZwaveValue}`
         );
       }
     });
